@@ -1,5 +1,5 @@
 import React from "react";
 
-const Tracks = () => {
+export default Tracks = () => {
     
 }
