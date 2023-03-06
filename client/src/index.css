@@ -451,3 +451,18 @@ i {
   justify-content: center;
   width: 100%;
 }
+
+/* Custom */
+
+img.licenseImage {
+  width: 20px;
+  height: 22.25px;
+}
+
+img.difficultyImage {
+  width: 12px;
+  height: 12px;
+  border: 1px solid lightgrey;
+  border-radius: 100%;
+  margin: 0.5px;
+}

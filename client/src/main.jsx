@@ -17,8 +17,8 @@ import Contact, { loader as contactLoader } from "./routes/contact";
 import EditContact, { action as editAction } from "./routes/edit";
 import { action as destroyAction } from "./routes/destroy";
 import Index from "./routes/index";
-// import Tracks from "./routes/tracks";
-// import Records from "./routes/records";
+import Tracks, { loader } from "./routes/tracks";
+import Records from "./routes/records";
 
 // Error Page
 import ErrorPage from "./error-page";
@@ -48,6 +48,15 @@ const router = createBrowserRouter([
         action: destroyAction,
         errorElement: <div>Oops! There was an error.</div>,
       },
+      {
+        path: "tracks",
+        element: <Tracks />,
+        loader, 
+      },
+      {
+        path: "tracks/:trackID",
+        element: <Records />,
+      }
     ],
   },
 ]);

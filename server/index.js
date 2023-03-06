@@ -2,7 +2,10 @@
 
 import express from "express";
 import cors from "cors";
-import pool from "./database";
+import pool from "./database.js";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -13,6 +16,23 @@ const PORT = 3000;
 app.get("/", (req, res) => {
     res.send("Hello world");
 })
+
+//#region Tracks Requests
+
+app.get("/tracks", async (req, res) => {
+    try {
+        pool.query("SELECT * FROM tracks;", (error, results) => {
+            if (error) throw error;
+
+            return res.json(results.rows);
+        });
+    } catch (err) {
+        console.error(err.message);
+        next(err);
+    }
+});
+
+//#endregion Tracks Requests
 
 //#region Records Requests
 
