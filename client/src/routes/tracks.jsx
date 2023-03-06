@@ -13,25 +13,17 @@ export async function loader({ params }) {
     return response.json();
 }
 
+const LICENSE_ORDER = ["None", "B3", "B2", "B1", "L3", "L2", "L1", "Pro"];
+
 const COLUMNS = [
-    { label: 'Name', renderCell: (item) => getTrackName(item.Name), sort: { sortKey: 'NAME' } },
-    { label: 'Theme', renderCell: (item) => getTrackTheme(item.Name), sort: { sortKey: 'THEME' } },
-    // { label: 'Task', renderCell: (item) => item.name },
-    // {
-    //   label: 'Deadline',
-    //   renderCell: (item) =>
-    //     item.deadline.toLocaleDateString('en-US', {
-    //       year: 'numeric',
-    //       month: '2-digit',
-    //       day: '2-digit',
-    //     }),
-    // },
-    // { label: 'Type', renderCell: (item) => item.type },
-    // {
-    //   label: 'Complete',
-    //   renderCell: (item) => item.isComplete.toString(),
-    // },
-    // { label: 'Tasks', renderCell: (item) => item.nodes },
+    { label: 'Name', renderCell: (item) => getTrackName(item.Name), sort: { sortKey: 'NAME' }, resize: true },
+    { label: 'Theme', renderCell: (item) => getTrackTheme(item.Name), sort: { sortKey: 'THEME' }, resize: true },
+    { label: 'License', renderCell: (item) => getLicenseField(item.License), sort: { sortKey: 'LICENSE' }, resize: true },
+    { label: 'Difficulty', renderCell: (item) => <DifficultyComponent difficulty={item.Difficulty}></DifficultyComponent>, sort: { sortKey: 'DIFFICULTY' }, resize: true },
+    // { label: 'Laps', renderCell: (item) => item.Laps },
+    { label: 'Item Mode?', renderCell: (item) => item.BItemMode ? "✓" : "", sort: { sortKey: 'BITEMMODE' }, resize: true },
+    { label: 'Release Date', renderCell: (item) => new Date(item.ReleaseDate).toISOString().split('T')[0], sort: { sortKey: 'RELEASEDATE' }, resize: true },
+    { label: 'Records', renderCell: (item) => <button>View</button>, resize: true }
 ];
 
 const TracksTableComponent = () => {
@@ -52,17 +44,29 @@ const TracksTableComponent = () => {
             onChange: onSortChange,
         },
         {
+            sortIcon: {
+                size: '10px',
+            },
             sortToggleType: SortToggleType.AlternateWithReset,
             sortFns: {
                 NAME: (array) => array.sort((a, b) => getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
-                THEME: (array) => array.sort((a, b) => {
-                    if (getTrackTheme(a.Name).localeCompare(getTrackTheme(b.Name) == 0)) {
-                        return array.sort((a, b) => getTrackName(a.Name).localeCompare(getTrackName(b.Name)));
-                    } else {
-                        return getTrackTheme(a.Name).localeCompare(getTrackTheme(b.Name));
+                THEME: (array) => array.sort((a, b) => getTrackTheme(a.Name).localeCompare(getTrackTheme(b.Name)) || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
+                LICENSE: (array) => array.sort((a, b) => {
+                    try {
+                        return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || getTrackName(a.Name).localeCompare(getTrackName(b.Name)));
                     }
-                })
-                // THEME: (array) => array.sort((a, b) => getTrackTheme(a.Name).localeCompare(getTrackTheme(b.Name))),
+                    catch {
+                        return 0;
+                    }
+                }),
+                DIFFICULTY: (array) => array.sort((a, b) => a.Difficulty - b.Difficulty || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
+                LAPS: (array) => array.sort((a, b) => a.Laps - b.Laps || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
+                BITEMMODE: (array) => array.sort((a, b) => {
+                    if (a.BItemMode && !b.BItemMode) return -1;
+                    else if (!a.BItemMode && b.BItemMode) return 1;
+                    else return getTrackName(a.Name).localeCompare(getTrackName(b.Name))
+                }),
+                RELEASEDATE: (array) => array.sort((a, b) => new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || getTrackName(a.Name).localeCompare(getTrackName(b.Name)))
             }
         },
     );
@@ -71,7 +75,7 @@ const TracksTableComponent = () => {
         console.log(action, state);
     }
 
-    return <CompactTable columns={COLUMNS} data={{ nodes }} theme={theme} sort={sort} />;
+    return <CompactTable columns={COLUMNS} data={{ nodes }} theme={theme} sort={sort} layout={{ fixedHeader: true }} />;
 };
 
 const getTrackName = name => {
@@ -80,6 +84,10 @@ const getTrackName = name => {
 
 const getTrackTheme = name => {
     return name?.split(":")[0];
+}
+
+const getLicenseField = license => {
+    return license !== "None" ? <img src={getLicenseImage(license)} alt={license} className="licenseImage"></img> : "None"
 }
 
 const getLicenseImage = license => {
@@ -103,50 +111,7 @@ export default function Tracks() {
 
     return (
         <>
-            <p id="zero-state">
-                This is a demo for React Router.
-                <br />
-                Check out{" "}
-                <a href="https://reactrouter.com">
-                    the docs at reactrouter.com
-                </a>
-                .
-            </p>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Theme</th>
-                        <th>License</th>
-                        <th>Difficulty</th>
-                        <th>Laps</th>
-                        <th>Item Mode?</th>
-                        <th>Release Date</th>
-                        <th>Records</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tracks.map(track => (
-                        <tr key={track.ID}>
-                            <td>{track.Name?.split(":")[1]?.trim()}</td>
-                            <td>{track.Name?.split(":")[0]}</td>
-                            <td>{track.License !== "None" ? <img src={getLicenseImage(track.License)} alt={track.License} className="licenseImage"></img> : "None"}</td>
-                            <td>
-                                <DifficultyComponent difficulty={track.Difficulty}></DifficultyComponent>
-                                {/* {getDifficulty(track.Difficulty)} */}
-                            </td>
-                            <td>TBD</td>
-                            <td>{track.BItemMode ? "✓" : ""}</td>
-                            <td>{new Date(track.ReleaseDate).toISOString().split('T')[0]}</td>
-                            <td>TBD</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-
-            {/* <TracksTableComponent/> */}
-
+            <h1>Tracks</h1>
             <TracksTableComponent />
         </>
     );
