@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { Form, useLoaderData } from "react-router-dom";
-import { getContact } from "../contacts";
+import { Form, useLoaderData, NavLink } from "react-router-dom";
 
 import { CompactTable } from '@table-library/react-table-library/compact';
 import { useTheme } from '@table-library/react-table-library/theme';
@@ -8,7 +7,9 @@ import { getTheme } from '@table-library/react-table-library/baseline';
 import { useSort, SortToggleType } from '@table-library/react-table-library/sort';
 
 export async function loader({ params }) {
-    const response = await fetch("http://localhost:3000/tracks");
+    const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks`);
+
+    console.log(response)
 
     return response.json();
 }
@@ -16,14 +17,20 @@ export async function loader({ params }) {
 const LICENSE_ORDER = ["None", "B3", "B2", "B1", "L3", "L2", "L1", "Pro"];
 
 const COLUMNS = [
-    { label: 'Name', renderCell: (item) => getTrackName(item.Name), sort: { sortKey: 'NAME' }, resize: true },
-    { label: 'Theme', renderCell: (item) => getTrackTheme(item.Name), sort: { sortKey: 'THEME' }, resize: true },
+    { label: 'Name', renderCell: (item) => item.Name, sort: { sortKey: 'NAME' }, resize: true },
+    { label: 'Theme', renderCell: (item) => item.Theme, sort: { sortKey: 'THEME' }, resize: true },
     { label: 'License', renderCell: (item) => getLicenseField(item.License), sort: { sortKey: 'LICENSE' }, resize: true },
     { label: 'Difficulty', renderCell: (item) => <DifficultyComponent difficulty={item.Difficulty}></DifficultyComponent>, sort: { sortKey: 'DIFFICULTY' }, resize: true },
-    // { label: 'Laps', renderCell: (item) => item.Laps },
+    { label: 'Laps', renderCell: (item) => item.Laps },
     { label: 'Item Mode?', renderCell: (item) => item.BItemMode ? "✓" : "", sort: { sortKey: 'BITEMMODE' }, resize: true },
     { label: 'Release Date', renderCell: (item) => new Date(item.ReleaseDate).toISOString().split('T')[0], sort: { sortKey: 'RELEASEDATE' }, resize: true },
-    { label: 'Records', renderCell: (item) => <button>View</button>, resize: true }
+    {
+        label: 'Records', renderCell: (item) =>
+        (<NavLink to={`${item.ID}`}>
+            <button>View</button>
+        </NavLink>)
+        , resize: true
+    }
 ];
 
 const TracksTableComponent = () => {
@@ -49,42 +56,34 @@ const TracksTableComponent = () => {
             },
             sortToggleType: SortToggleType.AlternateWithReset,
             sortFns: {
-                NAME: (array) => array.sort((a, b) => getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
-                THEME: (array) => array.sort((a, b) => getTrackTheme(a.Name).localeCompare(getTrackTheme(b.Name)) || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
+                NAME: (array) => array.sort((a, b) => a.Name.localeCompare(b.Name)),
+                THEME: (array) => array.sort((a, b) => a.Theme.localeCompare(b.Theme) || a.Name.localeCompare(b.Name)),
                 LICENSE: (array) => array.sort((a, b) => {
                     try {
-                        return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || getTrackName(a.Name).localeCompare(getTrackName(b.Name)));
+                        return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || a.Name.localeCompare(b.Name));
                     }
                     catch {
                         return 0;
                     }
                 }),
-                DIFFICULTY: (array) => array.sort((a, b) => a.Difficulty - b.Difficulty || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
-                LAPS: (array) => array.sort((a, b) => a.Laps - b.Laps || getTrackName(a.Name).localeCompare(getTrackName(b.Name))),
+                DIFFICULTY: (array) => array.sort((a, b) => a.Difficulty - b.Difficulty || a.Name.localeCompare(b.Name)),
+                LAPS: (array) => array.sort((a, b) => a.Laps - b.Laps || a.Name.localeCompare(b.Name)),
                 BITEMMODE: (array) => array.sort((a, b) => {
                     if (a.BItemMode && !b.BItemMode) return -1;
                     else if (!a.BItemMode && b.BItemMode) return 1;
-                    else return getTrackName(a.Name).localeCompare(getTrackName(b.Name))
+                    else return a.Name.localeCompare(b.Name)
                 }),
-                RELEASEDATE: (array) => array.sort((a, b) => new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || getTrackName(a.Name).localeCompare(getTrackName(b.Name)))
+                RELEASEDATE: (array) => array.sort((a, b) => new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || a.Name.localeCompare(b.Name))
             }
         },
     );
 
     function onSortChange(action, state) {
-        console.log(action, state);
+        // console.log(action, state);
     }
 
     return <CompactTable columns={COLUMNS} data={{ nodes }} theme={theme} sort={sort} layout={{ fixedHeader: true }} />;
 };
-
-const getTrackName = name => {
-    return name?.split(":")[1]?.trim();
-}
-
-const getTrackTheme = name => {
-    return name?.split(":")[0];
-}
 
 const getLicenseField = license => {
     return license !== "None" ? <img src={getLicenseImage(license)} alt={license} className="licenseImage"></img> : "None"

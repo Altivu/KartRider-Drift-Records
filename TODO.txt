@@ -1,0 +1,8 @@
+- Create Records Component
+  - View
+  - Add (based on authenticated user)
+  - Edit (based on authenticated user)
+  - Delete (based on authenticated user)
+- Authorize records routes based on authenticated user
+- Create proper header bar
+- Implement localization based on JSON files

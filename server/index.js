@@ -24,7 +24,7 @@ app.get("/tracks", async (req, res) => {
         pool.query("SELECT * FROM tracks;", (error, results) => {
             if (error) throw error;
 
-            return res.json(results.rows);
+            return res.json(results.rows.sort((a, b) => a.ListOrder - b.ListOrder));
         });
     } catch (err) {
         console.error(err.message);
@@ -46,11 +46,18 @@ app.get("/records", async (_, res) => {
 });
 
 // Get Records By Track ID
-app.get("/records/:trackID", async (req, res) => {
+app.get("/tracks/:trackID", async (req, res) => {
     try {
         const { trackID } = req.params;
 
-        return res.json(await pool.query("SELECT * FROM records WHERE TrackID = $1;", [trackID]));
+        const trackInfo = (await pool.query("SELECT * FROM tracks WHERE \"ID\" = $1", [trackID])).rows[0];
+        const records = (await pool.query("SELECT * FROM records WHERE \"TrackID\" = $1 ORDER BY \"Record\";", [trackID])).rows;
+
+        return res.json({
+            Name: trackInfo.Name,
+            InternalID: trackInfo.InternalID,
+            Records: records
+        });
     } catch (err) {
         console.error(err.message);
     }
@@ -79,7 +86,7 @@ app.put("/records/:id", async (req, res) => {
 //     }
 // });
 
-//#endregion
+//#endregion Records Requests
 ///
 
 

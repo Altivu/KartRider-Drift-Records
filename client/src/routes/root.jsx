@@ -1,6 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, NavLink, Link, useLoaderData, Form, redirect, useNavigation, useSubmit } from "react-router-dom";
 import { getContacts, createContact } from "../contacts";
+
+import { GoogleLogin, googleLogout } from '@react-oauth/google';
+import * as jose from 'jose'
+
+import { BsGlobe } from "react-icons/bs";
 
 export async function action() {
     const contact = await createContact();
@@ -15,6 +20,8 @@ export async function loader({ request }) {
 }
 
 export default function Root() {
+    const [credentials, setCredentials] = useState([]);
+
     const { contacts, q } = useLoaderData();
     const navigation = useNavigation();
     const submit = useSubmit();
@@ -29,10 +36,31 @@ export default function Root() {
         document.getElementById("q").value = q;
     }, [q]);
 
+    const logOut = () => {
+        googleLogout();
+        setCredentials(null);
+    }
+
+    // Google successful login
+    const responseMessage = (response) => {
+        setCredentials(jose.decodeJwt(response.credential));
+        console.log(credentials)
+    };
+    
+    // Google error during login
+    const errorMessage = (error) => {
+        console.log(error);
+    };
+
     return (
         <>
             <div id="sidebar">
                 <h1>React Router Contacts</h1>
+                <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
+                <button onClick={logOut}>Log Out</button>
+                <button id="localizationButton">
+                    <BsGlobe />
+                </button>
                 <div>
                     <Form id="search-form" role="search">
                         <input

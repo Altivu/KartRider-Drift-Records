@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import {
   createBrowserRouter,
   RouterProvider,
@@ -17,8 +18,8 @@ import Contact, { loader as contactLoader } from "./routes/contact";
 import EditContact, { action as editAction } from "./routes/edit";
 import { action as destroyAction } from "./routes/destroy";
 import Index from "./routes/index";
-import Tracks, { loader } from "./routes/tracks";
-import Records from "./routes/records";
+import Tracks, { loader as tracksLoader } from "./routes/tracks";
+import Records, { loader as recordsLoader } from "./routes/records";
 
 // Error Page
 import ErrorPage from "./error-page";
@@ -51,19 +52,22 @@ const router = createBrowserRouter([
       {
         path: "tracks",
         element: <Tracks />,
-        loader, 
+        loader: tracksLoader,
       },
       {
         path: "tracks/:trackID",
         element: <Records />,
+        loader: recordsLoader
       }
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    {/* <Header /> */}
-    <RouterProvider router={router} />
-  </React.StrictMode>,
+  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <React.StrictMode>
+      {/* <Header /> */}
+      <RouterProvider router={router} />
+    </React.StrictMode>
+  </GoogleOAuthProvider>,
 )

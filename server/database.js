@@ -1,32 +1,15 @@
 // Create the client
 import pg from 'pg';
+import * as dotenv from "dotenv";
 
-// const client = new pg.Client({
-//     host: "localhost",
-//     user: "postgres",
-//     port: 5432,
-//     password: "root",
-//     database: "postgres"
-// });
-
-// client.connect();
-
-// client.query("SELECT * FROM TRACKS", (err, res) => {
-//     if (!err) {
-//         console.log(res.rows);
-//     } else {
-//         console.log(err);
-//     }
-
-//     client.end;
-// });
+dotenv.config();
 
 const pool = new pg.Pool({
-    user: "postgres",
-    password: "root",
-    host: "localhost",
-    database: "postgres",
-    port: 5432
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    host: process.env.PG_HOST,
+    database: process.env.PG_DATABASE,
+    port: process.env.PG_PORT
 });
 
 export default pool;
