@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { Form, useLoaderData } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { Form, useLoaderData, NavLink, useOutletContext, useRouteLoaderData } from "react-router-dom";
 
 import { CompactTable } from '@table-library/react-table-library/compact';
 import { useTheme } from '@table-library/react-table-library/theme';
 import { getTheme } from '@table-library/react-table-library/baseline';
 import { useSort, SortToggleType } from '@table-library/react-table-library/sort';
 
-import { RiBilibiliFill } from 'react-icons';
+import { BiArrowBack } from 'react-icons/bi';
+import { BsYoutube } from 'react-icons/bs';
+import { RiBilibiliFill } from 'react-icons/ri';
+import { RxVideo } from 'react-icons/rx';
 
 export async function loader({ params }) {
   const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks/${params.trackID}`);
@@ -25,33 +28,56 @@ const COLUMNS = [
   // { label: 'Records', renderCell: (item) => <button>View</button>, resize: true }
 
   { label: 'Record', renderCell: (item) => item.Record, sort: { sortKey: 'RECORD' } },
-  { label: 'Player', renderCell: (item) => item.Player, sort: { sortKey: 'PLAYER' }},
+  { label: 'Player', renderCell: (item) => item.Player, sort: { sortKey: 'PLAYER' } },
+  // Date column is going to be further updated by seasons information
   { label: 'Date', renderCell: (item) => new Date(item.Date).toISOString().split('T')[0], sort: { sortKey: 'DATE' }, resize: true },
-  { label: '', renderCell: (item) => <button><RiBilibiliFill/></button>}
+  {
+    label: '', renderCell: (item) => {
+      let videoIcon = <RxVideo />;
+
+      if (item.Video?.includes("youtube") || item.Video?.includes("youtu.be")) videoIcon = <BsYoutube />;
+      else if (item.Video?.includes("bilibili")) videoIcon = <RiBilibiliFill />;
+
+      return <a href={item.Video} target="_blank">{videoIcon}</a>;
+    }
+  }
 ];
 
 export default function Records() {
   const trackData = useLoaderData();
+  const rootData = useRouteLoaderData("root");
+
+  // Testing setting background image
+  // const detailRef = useOutletContext()?.current;
+
+  // console.log(detailRef)
+
+  // if (detailRef) {
+  //   detailRef.style.backgroundImage = `url('https://github.com/Altivu/KRD-ui/blob/main/Track/Loading/${trackData.InternalID}.png?raw=true')`;
+  // }
 
   const RecordsTableComponent = () => {
-    // console.log(trackData)
-
     // It seems like it is mandatory for this variable to be named "nodes" to be read by data for react-table-library?
     // Also it forces "id" for key prop...
     const nodes = trackData.Records;
 
-    // console.log(nodes)
-
     nodes.forEach((record, index) => {
       record.id = index;
     });
+
+    // Update date column to include information from seasons
+    COLUMNS.find(col => col.label === 'Date').renderCell = (item) => {
+      let seasonOfRecord = rootData.seasons[rootData.seasons.findIndex(s => new Date(s.Date) > new Date(item.Date)) - 1];
+
+      return <span title={seasonOfRecord.Description}>{new Date(item.Date).toISOString().split('T')[0]}</span>;
+    }
 
     const theme = useTheme(getTheme());
 
     const sort = useSort(
       nodes,
       {
-
+        onChange: null
       },
       {
         sortIcon: {
@@ -89,13 +115,14 @@ export default function Records() {
   }
 
   return (
-    <>
+    <div id="recordsComponent">
+      <NavLink to="../tracks"><BiArrowBack /> Return to Tracks List</NavLink>
       <h1>Records for {trackData.Name}</h1>
       {
         trackData.Records.length ?
           <RecordsTableComponent /> :
           <i>No records</i>
       }
-    </>
+    </div>
   );
 }

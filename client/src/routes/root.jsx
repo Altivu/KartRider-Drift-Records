@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Outlet, NavLink, Link, useLoaderData, Form, redirect, useNavigation, useSubmit } from "react-router-dom";
 import { getContacts, createContact } from "../contacts";
 
@@ -13,18 +13,33 @@ export async function action() {
 }
 
 export async function loader({ request }) {
+    let { seasons, languages, countries } = [];
+
+    try {
+        // Yes I know this looks kind of ridiculous
+        seasons = await (await fetch(`${import.meta.env.VITE_SERVER_URL}/seasons`)).json();
+        languages = await (await fetch(`${import.meta.env.VITE_SERVER_URL}/languages`)).json();
+        countries = await (await (fetch(`${import.meta.env.VITE_SERVER_URL}/countries`))).json();
+    } catch {
+
+    }
+
+
     const url = new URL(request.url);
     const q = url.searchParams.get("q");
     const contacts = await getContacts(q);
-    return { contacts, q };
+    return { contacts, q, seasons, languages, countries };
 }
 
 export default function Root() {
+    // Store Google authentication credentials
     const [credentials, setCredentials] = useState([]);
 
-    const { contacts, q } = useLoaderData();
+    const { contacts, q, seasons } = useLoaderData();
     const navigation = useNavigation();
     const submit = useSubmit();
+
+    const detailRef = useRef(null);
 
     const searching =
         navigation.location &&
@@ -32,9 +47,9 @@ export default function Root() {
             "q"
         );
 
-    useEffect(() => {
-        document.getElementById("q").value = q;
-    }, [q]);
+    // useEffect(() => {
+    //     document.getElementById("q").value = q;
+    // }, [q]);
 
     const logOut = () => {
         googleLogout();
@@ -46,7 +61,7 @@ export default function Root() {
         setCredentials(jose.decodeJwt(response.credential));
         console.log(credentials)
     };
-    
+
     // Google error during login
     const errorMessage = (error) => {
         console.log(error);
@@ -54,7 +69,22 @@ export default function Root() {
 
     return (
         <>
-            <div id="sidebar">
+            <nav>
+                <NavLink to="">
+                    <img src={`${import.meta.env.VITE_ASSETS_GITHUB_URL}/GrandPrix/GrandPrixImage_Emblem_A.png`} className="emblemImage" />
+                </NavLink>
+                <ul>
+                    <li><NavLink to="tracks" className={({ isActive, isPending }) =>
+                        isActive
+                            ? "active"
+                            : isPending
+                                ? "pending"
+                                : ""}>Tracks</NavLink></li>
+                </ul>
+                <button><BsGlobe /></button>
+                <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
+            </nav>
+            {/* <div id="sidebar">
                 <h1>React Router Contacts</h1>
                 <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
                 <button onClick={logOut}>Log Out</button>
@@ -125,13 +155,18 @@ export default function Root() {
                         </p>
                     )}
                 </nav>
-            </div>
-            <div id="detail"
+            </div> */}
+
+
+            <div id="detail" ref={detailRef}
                 className={
                     navigation.state === "loading" ? "loading" : ""
                 }>
-                <Outlet />
+                <Outlet context={detailRef} />
             </div>
+            <footer>
+                <p>Website created in React by AltiV.</p>
+            </footer>
         </>
     );
 }

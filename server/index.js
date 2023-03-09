@@ -45,13 +45,13 @@ app.get("/records", async (_, res) => {
     }
 });
 
-// Get Records By Track ID
-app.get("/tracks/:trackID", async (req, res) => {
+// Get Records By (EN) Track Name
+app.get("/tracks/:trackName", async (req, res) => {
     try {
-        const { trackID } = req.params;
+        let { trackName } = req.params;
 
-        const trackInfo = (await pool.query("SELECT * FROM tracks WHERE \"ID\" = $1", [trackID])).rows[0];
-        const records = (await pool.query("SELECT * FROM records WHERE \"TrackID\" = $1 ORDER BY \"Record\";", [trackID])).rows;
+        const trackInfo = (await pool.query("SELECT * FROM tracks WHERE \"Name\" = $1", [trackName])).rows[0];
+        const records = (await pool.query("SELECT * FROM records WHERE \"TrackID\" = (SELECT \"ID\" FROM tracks WHERE \"Name\" = $1) ORDER BY \"Record\";", [trackName])).rows;
 
         return res.json({
             Name: trackInfo.Name,
@@ -100,7 +100,43 @@ app.post("/records", async (req, res) => {
     } catch (err) {
         console.error(err.message);
     }
-})
+});
+
+//#region Seasons Requests
+
+app.get("/seasons", async (_, res) => {
+    try {
+        return res.json((await pool.query("SELECT * FROM seasons;")).rows);
+    } catch (err) {
+        console.error(err.message);
+    }
+});
+
+//#endregion Seasons Requests
+
+//#region Languages Requests
+
+app.get("/languages", async (_, res) => {
+    try {
+        return res.json((await pool.query("SELECT * FROM languages;")).rows);
+    } catch (err) {
+        console.error(err.message);
+    }
+});
+
+//#endregion Languages Requests
+
+//#region Countries Requests
+
+app.get("/countries", async (_, res) => {
+    try {
+        return res.json((await pool.query("SELECT * FROM countries;")).rows);
+    } catch (err) {
+        console.error(err.message);
+    }
+});
+
+//#endregion Countries Requests
 
 app.listen(PORT, () => {
     console.log(`Running on Port ${PORT}`);

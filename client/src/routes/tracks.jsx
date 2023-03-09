@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Form, useLoaderData, NavLink } from "react-router-dom";
+import { Form, useLoaderData, NavLink, useRouteLoaderData } from "react-router-dom";
 
 import { CompactTable } from '@table-library/react-table-library/compact';
 import { useTheme } from '@table-library/react-table-library/theme';
@@ -7,16 +7,24 @@ import { getTheme } from '@table-library/react-table-library/baseline';
 import { useSort, SortToggleType } from '@table-library/react-table-library/sort';
 
 export async function loader({ params }) {
-    const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks`);
+    try {
+        const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks`);
 
-    console.log(response)
-
-    return response.json();
+        return response.json();
+    }
+    catch {
+        return [];
+    }
 }
 
 const LICENSE_ORDER = ["None", "B3", "B2", "B1", "L3", "L2", "L1", "Pro"];
 
 const COLUMNS = [
+    {
+        label: '', renderCell: (item) => {
+            if (item.InternalID) return <img src={`${import.meta.env.VITE_ASSETS_GITHUB_URL}/Track/MiniMap/SDF_Minimap_${item.InternalID}.png`} className="minimapImage" onError={() => { this.onerror = null; this.src = ''; }} />
+        }
+    },
     { label: 'Name', renderCell: (item) => item.Name, sort: { sortKey: 'NAME' }, resize: true },
     { label: 'Theme', renderCell: (item) => item.Theme, sort: { sortKey: 'THEME' }, resize: true },
     { label: 'License', renderCell: (item) => getLicenseField(item.License), sort: { sortKey: 'LICENSE' }, resize: true },
@@ -26,7 +34,7 @@ const COLUMNS = [
     { label: 'Release Date', renderCell: (item) => new Date(item.ReleaseDate).toISOString().split('T')[0], sort: { sortKey: 'RELEASEDATE' }, resize: true },
     {
         label: 'Records', renderCell: (item) =>
-        (<NavLink to={`${item.ID}`}>
+        (<NavLink to={`${item.Name}`}>
             <button>View</button>
         </NavLink>)
         , resize: true
@@ -35,6 +43,7 @@ const COLUMNS = [
 
 const TracksTableComponent = () => {
     const tracks = useLoaderData();
+    const rootData = useRouteLoaderData("root");
 
     // It seems like it is mandatory for this variable to be named "nodes" to be read by data for react-table-library?
     // Also it forces "id" for key prop...
@@ -42,6 +51,18 @@ const TracksTableComponent = () => {
     nodes.forEach(track => {
         track.id = track.ID;
     });
+
+    // Update date column to include information from seasons
+    COLUMNS.find(col => col.label === 'Release Date').renderCell = (item) => {
+        // Get the season AFTER the track's season due to date comparator logic
+        let indexOfSeasonOfRecord = rootData.seasons.findIndex(s => new Date(s.Date) > new Date(item.ReleaseDate));
+
+        if (indexOfSeasonOfRecord === -1) indexOfSeasonOfRecord = rootData.seasons.length;
+
+        let seasonOfRecord = rootData.seasons[indexOfSeasonOfRecord - 1];
+
+        return <span title={seasonOfRecord?.Description}>{new Date(item.ReleaseDate).toISOString().split('T')[0]}</span>;
+    }
 
     const theme = useTheme(getTheme());
 
@@ -111,7 +132,7 @@ export default function Tracks() {
     return (
         <>
             <h1>Tracks</h1>
-            <TracksTableComponent />
+            {tracks.length ? <TracksTableComponent /> : <i>Could not retrieve tracks information...</i>}
         </>
     );
 }
