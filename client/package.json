@@ -9,9 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.5.1",
     "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
     "@react-oauth/google": "^0.8.0",
     "@table-library/react-table-library": "^4.0.29",
+    "framer-motion": "^10.2.3",
     "jose": "^4.13.1",
     "localforage": "^1.10.0",
     "match-sorter": "^6.3.1",

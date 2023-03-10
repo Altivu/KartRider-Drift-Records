@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import {
   createBrowserRouter,
@@ -8,6 +9,9 @@ import {
 
 import App from './App'
 import './index.css'
+
+// Chakra UI Color Mode
+import theme from './theme'
 
 // Components
 import Header from './components/shared/Header';
@@ -67,8 +71,10 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')).render(
   <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
     <React.StrictMode>
-      {/* <Header /> */}
-      <RouterProvider router={router} />
+      <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+      <ChakraProvider>
+        <RouterProvider router={router} />
+      </ChakraProvider>
     </React.StrictMode>
   </GoogleOAuthProvider>,
 )

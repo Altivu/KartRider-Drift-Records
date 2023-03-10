@@ -54,10 +54,24 @@ app.get("/tracks/:trackName", async (req, res) => {
         const records = (await pool.query("SELECT * FROM records WHERE \"TrackID\" = (SELECT \"ID\" FROM tracks WHERE \"Name\" = $1) ORDER BY \"Record\";", [trackName])).rows;
 
         return res.json({
+            ID: trackInfo.ID,
             Name: trackInfo.Name,
             InternalID: trackInfo.InternalID,
             Records: records
         });
+    } catch (err) {
+        console.error(err.message);
+    }
+});
+
+// Add New Record
+app.post("/records", async (req, res) => {
+    try {
+        // const { trackID, record, date, video, player, region, kart, racer, controlType, submittedByID, submittedByName, bPersonalRecord, bDisplay } = req.body;
+
+        console.log(req.body);
+
+        return res.status(200).send("Hi")
     } catch (err) {
         console.error(err.message);
     }

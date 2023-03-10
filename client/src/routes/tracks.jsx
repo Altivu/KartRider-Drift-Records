@@ -5,6 +5,7 @@ import { CompactTable } from '@table-library/react-table-library/compact';
 import { useTheme } from '@table-library/react-table-library/theme';
 import { getTheme } from '@table-library/react-table-library/baseline';
 import { useSort, SortToggleType } from '@table-library/react-table-library/sort';
+import { Heading } from '@chakra-ui/react';
 
 export async function loader({ params }) {
     try {
@@ -131,7 +132,7 @@ export default function Tracks() {
 
     return (
         <>
-            <h1>Tracks</h1>
+            <Heading as='h3' size='lg' mt={4} mb={2}>Tracks</Heading>
             {tracks.length ? <TracksTableComponent /> : <i>Could not retrieve tracks information...</i>}
         </>
     );
