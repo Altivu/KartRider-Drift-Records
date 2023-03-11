@@ -7,14 +7,10 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
-import App from './App'
 import './index.css'
 
 // Chakra UI Color Mode
 import theme from './theme'
-
-// Components
-import Header from './components/shared/Header';
 
 // Routes
 import Root, { loader as rootLoader, action as rootAction } from "./routes/root";

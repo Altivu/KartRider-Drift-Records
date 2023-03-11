@@ -7,6 +7,9 @@ import * as jose from 'jose'
 
 import { BsGlobe } from "react-icons/bs";
 
+import Header from '../components/shared/Header'
+import Footer from '../components/shared/Footer'
+
 export async function action() {
     const contact = await createContact();
     return redirect(`/contacts/${contact.id}/edit`);
@@ -23,7 +26,7 @@ export async function loader({ request }) {
     } catch {
 
     }
-    
+
     const url = new URL(request.url);
     const q = url.searchParams.get("q");
     const contacts = await getContacts(q);
@@ -68,7 +71,8 @@ export default function Root() {
 
     return (
         <>
-            <nav>
+            <Header />
+            {/* <nav>
                 <NavLink to="">
                     <img src={`${import.meta.env.VITE_ASSETS_GITHUB_URL}/GrandPrix/GrandPrixImage_Emblem_A.png`} className="emblemImage" />
                 </NavLink>
@@ -82,7 +86,7 @@ export default function Root() {
                 </ul>
                 <button><BsGlobe /></button>
                 <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
-            </nav>
+            </nav> */}
             {/* <div id="sidebar">
                 <h1>React Router Contacts</h1>
                 <GoogleLogin onSuccess={responseMessage} onError={errorMessage} />
@@ -163,9 +167,12 @@ export default function Root() {
                 }>
                 <Outlet context={detailRef} />
             </div>
-            <footer>
+
+            <Footer />
+
+            {/* <footer>
                 <p>Website created in React by AltiV.</p>
-            </footer>
+            </footer> */}
         </>
     );
 }
