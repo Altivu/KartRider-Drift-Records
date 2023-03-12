@@ -24,20 +24,20 @@ import { NavLink } from 'react-router-dom';
 const Links = ['Tracks', 'Dashboard', 'Projects', 'Team'];
 
 const NavLinkComponent = ({ children }) => (
-    <NavLink to="tracks" className={({ isActive, isPending }) => isActive ? "active" : isPending ? "pending" : ""}>
-        <Link
-            px={2}
-            py={1}
-            rounded={'md'}
-            _hover={{
-                textDecoration: 'none',
-                bg: useColorModeValue('gray.200', 'gray.700'),
-            }}
-        // href={'#'}
-        >
-            {children}
-        </Link>
-    </NavLink>
+    <Link as={NavLink}
+        to="tracks"
+        className={({ isActive, isPending }) => isActive ? "active" : isPending ? "pending" : ""}
+        px={2}
+        py={1}
+        rounded={'md'}
+        _hover={{
+            textDecoration: 'none',
+            bg: useColorModeValue('gray.200', 'gray.700'),
+        }}
+    // href={'#'}
+    >
+        {children}
+    </Link>
 );
 
 export default function withAction() {

@@ -28,6 +28,7 @@ app.get("/tracks", async (req, res) => {
                     "Record",
                     "Player",
                     "Video",
+                    "Date" AS "TopRecordDate",
                     COUNT("TrackID") OVER (PARTITION BY "TrackID") AS "NumberOfRecords"
                 FROM RECORDS
                 ORDER BY "TrackID",
@@ -166,7 +167,7 @@ app.get("/languages", async (_, res) => {
 
 app.get("/countries", async (_, res) => {
     try {
-        return res.json((await pool.query("SELECT * FROM countries;")).rows);
+        return res.json((await pool.query('SELECT * FROM countries ORDER BY "Code";')).rows);
     } catch (err) {
         console.error(err.message);
     }

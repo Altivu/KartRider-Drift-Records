@@ -22,16 +22,14 @@ import {
     Spinner,
     RadioGroup, Radio,
     HStack,
-    Alert,
-    AlertIcon,
-    CloseButton,
-    useDisclosure
+    useToast
 } from '@chakra-ui/react'
 
 import { BsFillQuestionCircleFill } from 'react-icons/bs'
-import { Link } from 'react-router-dom';
 
 const AddEditRecord = (props) => {
+    const toast = useToast();
+
     const isOpen = props.isOpen;
     const onOpen = props.onOpen;
     const onClose = props.onClose;
@@ -54,11 +52,48 @@ const AddEditRecord = (props) => {
 
     const [bSubmittingRecord, setBSubmittingRecord] = useState(false);
 
-    const {
-        isOpen: isOpenAlert,
-        onOpen: onOpenAlert,
-        onClose: onCloseAlert
-    } = useDisclosure({ defaultIsOpen: false });
+    const [editInitialState, setEditInitialState] = useState({});
+    const [bEditInitialized, setBEditInitialized] = useState(false);
+
+    // Check if an edit record prompt was set, and if so, populate fields + change modal title accordingly
+    useEffect(() => {
+        if (props.recordToEdit && !bEditInitialized) {
+            setRecord(props.recordToEdit.Record);
+            setDate(new Date(props.recordToEdit.Date).toISOString().split('T')[0]);
+            setPlayer(props.recordToEdit.Player);
+            setVideo(props.recordToEdit.Video);
+
+            setKart(props.recordToEdit.Kart);
+            setRacer(props.recordToEdit.Racer);
+            setControlTypeOther([null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? "" : props.recordToEdit.ControlType);
+
+            // Dropdowns don't initialize proper and need to be set with timeout + direct DOM manipulation???
+            setTimeout(() => {
+                setRegion(props.recordToEdit.Region);
+                document.getElementById("region").value = props.recordToEdit.Region;
+
+                let controlType = [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other";
+
+                setControlType(controlType);
+                document.getElementById("controlType").value = controlType;
+
+                console.log(record)
+
+                setEditInitialState({
+                    record: props.recordToEdit.Record,
+                    date: new Date(props.recordToEdit.Date).toISOString().split('T')[0],
+                    player: props.recordToEdit.Player,
+                    video: props.recordToEdit.Video,
+                    kart: props.recordToEdit.Kart,
+                    racer: props.recordToEdit.Racer,
+                    controlType: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other",
+                    controlTypeOther: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? "" : props.recordToEdit.ControlType
+                });
+            });
+
+            setBEditInitialized(true);
+        }
+    });
 
     const formErrorObj = useMemo(() => {
         return [{
@@ -73,12 +108,17 @@ const AddEditRecord = (props) => {
             validCheck: Boolean(video),
             errorMsg: "Video URL contains an invalid value"
         },
+        // {
+        //     // ISSUE: This check breaks if the user pastes anything in for some reason
+        //     validCheck: videoRef?.current?.checkValidity() && video.length > 1,
+        //     errorMsg: "Video URL is not correctly formatted (urlscheme://restofurl)"
+        // },
         {
-            // ISSUE: This check breaks if the user pastes anything in for some reason
-            validCheck: videoRef?.current?.checkValidity() && video.length > 1,
-            errorMsg: "Video URL is not correctly formatted (urlscheme://restofurl)"
-        }];
-    }, [record, date, video])
+            validCheck: controlType !== "Other" || controlTypeOther,
+            errorMsg: "Control Type - Other contains an invalid value"
+        }
+        ];
+    }, [record, date, video, controlType, controlTypeOther]);
 
     const bFormValid = useMemo(() => {
         return formErrorObj.every(item => item.validCheck);
@@ -169,103 +209,207 @@ const AddEditRecord = (props) => {
         }
     }
 
-    // // Use this to format pasted data
-    // // Going to do this piece by piece-by-piece I am bad at programming
-    // const recordOnPaste = (e) => {
-    //     // Get current position of cursor in input box
-    //     let selectionStart = e.target.selectionStart;
-    //     let textToPaste = e.clipboardData.getData("text");
+    // Use this to format pasted data
+    // Going to do this piece by piece-by-piece I am bad at programming
+    const recordOnPaste = (e) => {
+        // Get current position of cursor in input box
+        let selectionStart = e.target.selectionStart;
+        let textToPaste = e.clipboardData.getData("text");
 
-    //     // If something has been selected and there is text to paste (even if fully invalid), delete the selection as standard logic
-    //     if (textToPaste.length && selectionStart !== e.target.selectionEnd) {
-    //         e.target.value =
-    //             e.target.value.substring(0, selectionStart) +
-    //             e.target.value.substring(e.target.selectionEnd);
-    //     }
+        // If something has been selected and there is text to paste (even if fully invalid), delete the selection as standard logic
+        if (textToPaste.length && selectionStart !== e.target.selectionEnd) {
+            e.target.value =
+                e.target.value.substring(0, selectionStart) +
+                e.target.value.substring(e.target.selectionEnd);
+        }
 
-    //     for (let chr of textToPaste) {
-    //         // Break out of loop if max length of input has been reached
-    //         if (e.target.value.length >= e.target.maxLength) break;
-    //         // Don't allow non-numeric characters unless it is ":" or "."
-    //         if (!/[0-9]|:|\./.test(chr)) continue;
-    //         // If ";" or "." would otherwise be inserted into the wrong position, ignore
-    //         if (
-    //             (chr === ":" && e.target.value.length !== 2) ||
-    //             (chr === "." && e.target.value.length !== 5)
-    //         )
-    //             continue;
+        for (let chr of textToPaste) {
+            // Break out of loop if max length of input has been reached
+            if (e.target.value.length >= e.target.maxLength) break;
+            // Don't allow non-numeric characters unless it is ":" or "."
+            if (!/[0-9]|:|\./.test(chr)) continue;
+            // If ";" or "." would otherwise be inserted into the wrong position, ignore
+            if (
+                (chr === ":" && e.target.value.length !== 2) ||
+                (chr === "." && e.target.value.length !== 5)
+            )
+                continue;
 
-    //         // Check for automatic insertion of ":" and "."
-    //         if (/[0-9]/.test(chr)) {
-    //             if (selectionStart === 2) {
-    //                 e.target.value = insertCharIntoString(
-    //                     ":",
-    //                     e.target.value,
-    //                     selectionStart++
-    //                 );
-    //             } else if (selectionStart === 5) {
-    //                 e.target.value = insertCharIntoString(
-    //                     ".",
-    //                     e.target.value,
-    //                     selectionStart++
-    //                 );
-    //             }
-    //         }
+            // Check for automatic insertion of ":" and "."
+            if (/[0-9]/.test(chr)) {
+                if (selectionStart === 2) {
+                    e.target.value = insertCharIntoString(
+                        ":",
+                        e.target.value,
+                        selectionStart++
+                    );
+                } else if (selectionStart === 5) {
+                    e.target.value = insertCharIntoString(
+                        ".",
+                        e.target.value,
+                        selectionStart++
+                    );
+                }
+            }
 
-    //         // Append value manually and prevent standard paste logic
-    //         e.target.value = insertCharIntoString(
-    //             chr,
-    //             e.target.value,
-    //             selectionStart++
-    //         );
-    //     }
+            // Append value manually and prevent standard paste logic
+            e.target.value = insertCharIntoString(
+                chr,
+                e.target.value,
+                selectionStart++
+            );
+        }
 
-    //     // Set the cursor to the "expected" position after paste logic is complete
-    //     e.target.selectionStart = selectionStart;
-    //     e.target.selectionEnd = selectionStart;
+        setRecord(e.target.value);
 
-    //     e.preventDefault();
-    // };
+        // Set the cursor to the "expected" position after paste logic is complete
+        e.target.selectionStart = selectionStart;
+        e.target.selectionEnd = selectionStart;
+
+        e.preventDefault();
+    };
 
     const insertCharIntoString = (chr, str, position) => {
         return `${str.substring(0, position)}${chr}${str.substring(position)}`;
     };
 
     const modalSave = async () => {
-        // Get all the field information
-        const form = {
-            TrackID: props.trackData.ID,
-            Record: record,
-            Date: date,
-            Player: player || "???",
-            Video: video || null,
-            Region: region || null,
-            Kart: kart || null,
-            Racer: racer || null,
-            ControlType: controlType !== "Other" ? controlType : (controlTypeOther || null),
-            SubmittedByID: null,
-            SubmittedByName: "AltiV",
-            BPersonalRecord: recordType == 2,
-            BDisplay: true
-        };
-
         try {
             setBSubmittingRecord(true);
 
-            await fetch(`${import.meta.env.VITE_SERVER_URL}/records`, {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(form)
-            });
+            // Add Record Logic
+            if (!bEditInitialized) {
+                // Get all the field information
+                const form = {
+                    TrackID: props.trackData.ID,
+                    Record: record,
+                    Date: date,
+                    Player: player || "???",
+                    Video: video || null,
+                    Region: region || null,
+                    Kart: kart || null,
+                    Racer: racer || null,
+                    ControlType: controlType !== "Other" ? controlType : (controlTypeOther || null),
+                    SubmittedByID: null,
+                    SubmittedByName: "AltiV",
+                    BPersonalRecord: recordType == 2,
+                    BDisplay: true
+                };
+
+                await fetch(`${import.meta.env.VITE_SERVER_URL}/records`, {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(form)
+                });
+
+                // Update records with the newly added record and sort based on previously selected options
+                props.trackData.Records.push(form);
+                props.performSort(props.sortOptions.column);
+
+                toast({
+                    description: "Record successfully added.",
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+            }
+            // Edit Record Logic
+            else {
+                const form = {};
+
+                // Let's go over all the fields one by one and see if they have changed...
+                if (record !== editInitialState.record) form.Record = record;
+                if (date !== editInitialState.date) form.Date = date;
+                if (player !== editInitialState.player) form.Player = player || "???";
+                if (video !== editInitialState.video) form.Video = video || null;
+                if (kart !== editInitialState.kart) form.Kart = kart || null;
+                if (racer !== editInitialState.racer) form.Racer = racer || null;
+                if (controlType !== editInitialState.controlType) form.ControlType = controlType !== "Other" ? controlType : (controlTypeOther || null);
+                if (controlTypeOther !== editInitialState.controlTypeOther) form.ControlType = controlType !== "Other" ? controlType : (controlTypeOther || null);
+
+                if (!Object.keys(form).length) {
+                    toast({
+                        description: "Record had nothing to update.",
+                        status: 'info',
+                        duration: 5000,
+                        isClosable: true,
+                    });
+                }
+                else {
+
+                }
+
+                // setEditInitialState({
+                //     record: props.recordToEdit.Record,
+                //     date: new Date(props.recordToEdit.Date).toISOString().split('T')[0],
+                //     player: props.recordToEdit.Player,
+                //     video: props.recordToEdit.Video,
+                //     kart: props.recordToEdit.Kart,
+                //     racer: props.recordToEdit.Racer,
+                //     controlType: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other",
+                //     controlTypeOther: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? "" : props.recordToEdit.ControlType
+                // });
+
+                return;
+
+                await fetch(`${import.meta.env.VITE_SERVER_URL}/records/${props.recordToEdit.ID}`, {
+                    method: "PUT",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(form)
+                });
+
+                // Update records with the newly added record and sort based on previously selected options
+                props.trackData.Records.push(form);
+                props.performSort(props.sortOptions.column);
+
+                toast({
+                    description: "Record successfully added.",
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+            }
 
             props.onClose();
         } catch (error) {
-            onOpenAlert();
+            console.error(error);
+
+            toast({
+                description: "There was an error processing your request. Please try again later.",
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         } finally {
             setBSubmittingRecord(false);
         }
+    }
+
+    const modalClose = () => {
+        if (props.recordToEdit) props.setRecordToEdit(null);
+
+        // Reset all the states one by one...
+        setRecordType(1);
+        setRecord("");
+        setDate("");
+        setPlayer("");
+        setVideo("");
+
+        setRegion("");
+        setKart("");
+        setRacer("");
+        setControlType(null);
+        setControlTypeOther("");
+
+        setBSubmittingRecord(false);
+
+        setBEditInitialized(false);
+
+        props.onClose();
     }
 
     return (
@@ -278,8 +422,8 @@ const AddEditRecord = (props) => {
         >
             <ModalOverlay />
             <ModalContent>
-                <ModalHeader>Add or Edit a Record for {props.trackData.Name}</ModalHeader>
-                <ModalCloseButton />
+                <ModalHeader>{!bEditInitialized ? "Add" : "Edit"} Record for {props.trackData.Name}</ModalHeader>
+                <ModalCloseButton isDisabled={bSubmittingRecord} onClick={modalClose} />
                 <ModalBody pb={6}>
                     {/* <FormControl>
                         <Box display="flex" alignItems="baseline">
@@ -322,7 +466,8 @@ const AddEditRecord = (props) => {
                             onChange={e => setRecord(e.target.value)}
                             onKeyDown={recordOnKeyDown}
                             onInput={recordOnInput}
-                            // onPaste={recordOnPaste}
+                            onPaste={recordOnPaste}
+                            autoComplete="off"
                         />
                     </FormControl>
 
@@ -343,6 +488,7 @@ const AddEditRecord = (props) => {
                             // Current date, formatted yyyy-mm-dd
                             max={new Date().toJSON().slice(0, 10)}
                             onChange={e => setDate(e.target.value)}
+                            autoComplete="off"
                         />
                     </FormControl>
 
@@ -353,10 +499,14 @@ const AddEditRecord = (props) => {
                                 <span><BsFillQuestionCircleFill /></span>
                             </Tooltip>
                         </Box>
-                        <Input id="player" value={player} placeholder='Insert player name here' onChange={e => setPlayer(e.target.value)} />
+                        <Input
+                            id="player"
+                            value={player}
+                            placeholder='Insert player name here'
+                            onChange={e => setPlayer(e.target.value)} />
                     </FormControl>
 
-                    <FormControl mt={4} isRequired={recordType === "1"}>
+                    <FormControl mt={4} isRequired={recordType == "1"}>
                         <Box display="flex" alignItems="baseline">
                             <FormLabel>Video URL</FormLabel>
                             <Popover trigger="hover">
@@ -368,7 +518,7 @@ const AddEditRecord = (props) => {
                                     <PopoverBody>
                                         <UnorderedList>
                                             <ListItem>Please be respectful and do not submit inappropriate content.</ListItem>
-                                            <ListItem>YouTube or Bilibili videos are the standard recommendation, but any accessible link to a record video is acceptable.</ListItem>
+                                            <ListItem>YouTube videos are the standard recommendation, but any accessible link to a record video is acceptable.</ListItem>
                                             <ListItem>If the video contains multiple records, be sure to include the timestamp for the submitted track in question (ex. <ChakraLink href='https://youtu.be/CLwZkpI5OiQ?t=91' isExternal>https://youtu.be/CLwZkpI5OiQ?t=91</ChakraLink>)</ListItem>
                                         </UnorderedList>
                                     </PopoverBody>
@@ -382,6 +532,7 @@ const AddEditRecord = (props) => {
                             type="url"
                             placeholder="https://www.youtube.com/watch?v=ygBl_gRTKfY"
                             onChange={e => setVideo(e.target.value)}
+                            autoComplete="off"
                         />
                     </FormControl>
 
@@ -436,19 +587,6 @@ const AddEditRecord = (props) => {
 
                         {controlType === "Other" ? <Input id="controlTypeOther" value={controlTypeOther} placeholder="Insert control type here" onChange={e => setControlTypeOther(e.target.value)} /> : <></>}
                     </FormControl>
-
-                    {(isOpenAlert ? <Alert status="error" mt={4} >
-                        <AlertIcon />
-                        There was an error processing your request. Please try again later.
-                        <CloseButton
-                            alignSelf='flex-start'
-                            position='relative'
-                            right={-1}
-                            top={-1}
-                            onClick={onCloseAlert}
-                        />
-                    </Alert> : <></>)}
-
                 </ModalBody>
 
                 <ModalFooter>
@@ -474,7 +612,7 @@ const AddEditRecord = (props) => {
                     </Popover> : <Button colorScheme='blue' mr={3} onClick={modalSave} isLoading={bSubmittingRecord} loadingText="Submitting record..." spinnerPlacement='start'>
                         Save
                     </Button>)}
-                    <Button onClick={onClose}>Cancel</Button>
+                    <Button onClick={modalClose} isDisabled={bSubmittingRecord}>Cancel</Button>
                 </ModalFooter>
             </ModalContent>
         </Modal >);

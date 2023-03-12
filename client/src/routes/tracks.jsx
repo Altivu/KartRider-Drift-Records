@@ -22,93 +22,6 @@ export async function loader({ params }) {
 
 const LICENSE_ORDER = ["None", "B3", "B2", "B1", "L3", "L2", "L1", "Pro"];
 
-// const COLUMNS = [
-//     {
-//         label: '', renderCell: (item) => {
-//             if (item.InternalID) return <img src={`${import.meta.env.VITE_ASSETS_GITHUB_URL}/Track/MiniMap/SDF_Minimap_${item.InternalID}.png`} className="minimapImage" onError={() => { this.onerror = null; this.src = ''; }} />
-//         }
-//     },
-//     { label: 'Name', renderCell: (item) => item.Name, sort: { sortKey: 'NAME' }, resize: true },
-//     { label: 'Theme', renderCell: (item) => item.Theme, sort: { sortKey: 'THEME' }, resize: true },
-//     { label: 'License', renderCell: (item) => getLicenseField(item.License), sort: { sortKey: 'LICENSE' }, resize: true },
-//     { label: 'Difficulty', renderCell: (item) => <DifficultyComponent difficulty={item.Difficulty}></DifficultyComponent>, sort: { sortKey: 'DIFFICULTY' }, resize: true },
-//     { label: 'Laps', renderCell: (item) => item.Laps },
-//     { label: 'Item Mode?', renderCell: (item) => item.BItemMode ? "✓" : "", sort: { sortKey: 'BITEMMODE' }, resize: true },
-//     { label: 'Release Date', renderCell: (item) => new Date(item.ReleaseDate).toISOString().split('T')[0], sort: { sortKey: 'RELEASEDATE' }, resize: true },
-//     {
-//         label: 'Records', renderCell: (item) =>
-//         (<NavLink to={`${item.Name}`}>
-//             <button>View</button>
-//         </NavLink>)
-//         , resize: true
-//     }
-// ];
-
-const TracksTableComponent = () => {
-    const tracks = useLoaderData();
-    const rootData = useRouteLoaderData("root");
-
-    // It seems like it is mandatory for this variable to be named "nodes" to be read by data for react-table-library?
-    // Also it forces "id" for key prop...
-    const nodes = tracks;
-    nodes.forEach(track => {
-        track.id = track.ID;
-    });
-
-    // // Update date column to include information from seasons
-    // COLUMNS.find(col => col.label === 'Release Date').renderCell = (item) => {
-    //     // Get the season AFTER the track's season due to date comparator logic
-    //     let indexOfSeasonOfRecord = rootData.seasons.findIndex(s => new Date(s.Date) > new Date(item.ReleaseDate));
-
-    //     if (indexOfSeasonOfRecord === -1) indexOfSeasonOfRecord = rootData.seasons.length;
-
-    //     let seasonOfRecord = rootData.seasons[indexOfSeasonOfRecord - 1];
-
-    //     return <span title={seasonOfRecord?.Description}>{new Date(item.ReleaseDate).toISOString().split('T')[0]}</span>;
-    // }
-
-    const theme = useTheme(getTheme());
-
-    const sort = useSort(
-        nodes,
-        {
-            onChange: onSortChange,
-        },
-        {
-            sortIcon: {
-                size: '10px',
-            },
-            sortToggleType: SortToggleType.AlternateWithReset,
-            sortFns: {
-                NAME: (array) => array.sort((a, b) => a.Name.localeCompare(b.Name)),
-                THEME: (array) => array.sort((a, b) => a.Theme.localeCompare(b.Theme) || a.Name.localeCompare(b.Name)),
-                LICENSE: (array) => array.sort((a, b) => {
-                    try {
-                        return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || a.Name.localeCompare(b.Name));
-                    }
-                    catch {
-                        return 0;
-                    }
-                }),
-                DIFFICULTY: (array) => array.sort((a, b) => a.Difficulty - b.Difficulty || a.Name.localeCompare(b.Name)),
-                LAPS: (array) => array.sort((a, b) => a.Laps - b.Laps || a.Name.localeCompare(b.Name)),
-                BITEMMODE: (array) => array.sort((a, b) => {
-                    if (a.BItemMode && !b.BItemMode) return -1;
-                    else if (!a.BItemMode && b.BItemMode) return 1;
-                    else return a.Name.localeCompare(b.Name)
-                }),
-                RELEASEDATE: (array) => array.sort((a, b) => new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || a.Name.localeCompare(b.Name))
-            }
-        },
-    );
-
-    function onSortChange(action, state) {
-        // console.log(action, state);
-    }
-
-    return <CompactTable data={{ nodes }} theme={theme} sort={sort} layout={{ fixedHeader: true }} />;
-};
-
 const getLicenseField = license => {
     return license !== "None" ? <Image src={getLicenseImage(license)} alt={license} className="licenseImage"></Image> : "None"
 }
@@ -197,7 +110,21 @@ export default function Tracks() {
                     else if (!a.BItemMode && b.BItemMode) return 1;
                     else return a.Name.localeCompare(b.Name)
                 }
-                case "ReleaseDate": return new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || a.Name.localeCompare(b.Name)
+                case "ReleaseDate": return new Date(a.ReleaseDate).toISOString().split('T')[0].localeCompare(new Date(b.ReleaseDate).toISOString().split('T')[0]) || a.Name.localeCompare(b.Name);
+                case "TopSavedRecord": {
+                    if (!a.Record && b.Record) {
+                        return 1;
+                    }
+                    else if (a.Record && !b.Record) {
+                        return -1;
+                    } 
+                    else if (!a.Record && !b.Record) {
+                        return a.Name.localeCompare(b.Name);
+                    }
+                    else {
+                        return a.Record.localeCompare(b.Record);
+                    }
+                }
             }
         }
 
@@ -259,7 +186,7 @@ export default function Tracks() {
                                     <Td>{track.Laps}</Td>
                                     <Td>{track.BItemMode ? "✓" : ""}</Td>
                                     <Td><Tooltip label={track.seasonOfRecord}>{new Date(track.ReleaseDate).toISOString().split('T')[0]}</Tooltip></Td>
-                                    <Td>{track.Record ? <Tooltip label={`by ${track.Player}`}><ChakraLink href={track.Video} isExternal>{track.Record}</ChakraLink></Tooltip> : "--:--.---"}</Td>
+                                    <Td>{track.Record ? <Tooltip label={`by ${track.Player} on ${new Date(track.TopRecordDate).toISOString().split('T')[0]}`}><ChakraLink href={track.Video} isExternal>{track.Record}</ChakraLink></Tooltip> : "--:--.---"}</Td>
                                     <Td>
                                         <NavLink to={`${track.Name}`}>
                                             <Button>View ({track.NumberOfRecords || 0})</Button>
@@ -271,8 +198,6 @@ export default function Tracks() {
                     </Tbody>
                 </Table>
             </TableContainer>
-
-
         </>
     );
 }

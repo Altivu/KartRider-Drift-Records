@@ -15,13 +15,8 @@ import {
   Table, TableContainer, Thead, Tr, Th, Td, Tbody,
   IconButton,
   HStack,
-  Tooltip
+  Tooltip,
 } from '@chakra-ui/react'
-
-import { CompactTable } from '@table-library/react-table-library/compact';
-import { useTheme } from '@table-library/react-table-library/theme';
-import { getTheme } from '@table-library/react-table-library/baseline';
-import { useSort, SortToggleType } from '@table-library/react-table-library/sort';
 
 import { BiArrowBack, BiEdit } from 'react-icons/bi';
 import { BsYoutube } from 'react-icons/bs';
@@ -38,41 +33,6 @@ export async function loader({ params }) {
   return response.json();
 }
 
-// const COLUMNS = [
-//   { label: 'Record', renderCell: (item) => item.Record, sort: { sortKey: 'RECORD' } },
-//   { label: 'Player', renderCell: (item) => item.Player, sort: { sortKey: 'PLAYER' } },
-//   // Date column is going to be further updated by seasons information
-//   { label: 'Date', renderCell: (item) => new Date(item.Date).toISOString().split('T')[0], sort: { sortKey: 'DATE' }, resize: true },
-//   {
-//     label: 'Actions', renderCell: (item) => {
-//       let videoIcon = <RxVideo />;
-
-//       if (item.Video?.includes("youtube") || item.Video?.includes("youtu.be")) videoIcon = <BsYoutube />;
-//       else if (item.Video?.includes("bilibili")) videoIcon = <RiBilibiliFill />;
-
-//       return (
-//         <>
-//           <a href={item.Video} target="_blank" title="Go to video">{videoIcon}</a>
-//           <button><RiAddFill /></button>
-//           <button onClick={openModal}><BiEdit /></button>
-//           <button><RiDeleteBin6Line /></button>
-//         </>
-//       );
-//     }
-//   }
-// ];
-
-const openModal = () => {
-  const modal = document.querySelector(".modal")
-  const closeBtn = document.querySelector(".close")
-  modal.style.display = "block";
-  closeBtn.addEventListener("click", () => {
-    modal.style.display = "none";
-  })
-}
-
-// https://medium.com/@daniela.sandoval/creating-a-popup-window-using-js-and-react-4c4bd125da57
-
 export default function Records() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -83,6 +43,11 @@ export default function Records() {
     column: null,
     order: null
   });
+
+  const addEditRecordRef = useRef(null);
+
+  // For Edit Record if applicable
+  const [recordToEdit, setRecordToEdit] = useState(null);
 
   const COLUMNS = [
     { field: "Record", columnName: "Record" },
@@ -126,6 +91,10 @@ export default function Records() {
       order
     });
 
+    performSort(column);
+  }
+
+  const performSort = (column) => {
     const sorter = (a, b) => {
       switch (column) {
         case "Record": return a.Record.localeCompare(b.Record);
@@ -135,8 +104,8 @@ export default function Records() {
     }
 
     trackData.Records.sort((a, b) => {
-      if (!order) return a.ID - b.ID;
-      else if (order === "Asc") return sorter(a, b);
+      if (!sortOptions.order) return a.ID - b.ID;
+      else if (sortOptions.order === "Asc") return sorter(a, b);
       else return sorter(b, a);
     });
   }
@@ -165,87 +134,24 @@ export default function Records() {
     return videoIcon;
   }
 
-  // const RecordsTableComponent = () => {
-  //   // It seems like it is mandatory for this variable to be named "nodes" to be read by data for react-table-library?
-  //   // Also it forces "id" for key prop...
-  //   const nodes = trackData.Records;
+  const setAddEditRecordModalData = (record) => {
+    console.log("opening...")
+    console.log(addEditRecordRef.current)
 
-  //   nodes.forEach((record, index) => {
-  //     record.id = index;
-  //   });
+    // addEditRecordRef.current.setRecord(record.Record);
 
-  //   // Update date column to include information from seasons
-  //   COLUMNS.find(col => col.label === 'Date').renderCell = (item) => {
-  //     let indexOfSeasonOfRecord = rootData.seasons.findIndex(s => new Date(s.Date) > new Date(item.Date));
+    // const [recordType, setRecordType] = useState(1);
+    // const [record, setRecord] = useState("");
+    // const [date, setDate] = useState("");
+    // const [player, setPlayer] = useState("");
+    // const [video, setVideo] = useState("");
 
-  //     if (indexOfSeasonOfRecord === -1) indexOfSeasonOfRecord = rootData.seasons.length;
-
-  //     let seasonOfRecord = rootData.seasons[indexOfSeasonOfRecord - 1];
-
-  //     return <span title={seasonOfRecord.Description}>{new Date(item.Date).toISOString().split('T')[0]}</span>;
-  //   }
-
-  //   const theme = useTheme(getTheme());
-
-  //   const sort = useSort(
-  //     nodes,
-  //     {
-  //       onChange: null
-  //     },
-  //     {
-  //       sortIcon: {
-  //         size: '10px',
-  //       },
-  //       sortToggleType: SortToggleType.AlternateWithReset,
-  //       sortFns: {
-  //         RECORD: (array) => array.sort((a, b) => (a.Record).localeCompare(b.Record)),
-  //         PLAYER: (array) => array.sort((a, b) => (a.Player).localeCompare(b.Player)),
-  //         DATE: (array) => array.sort((a, b) => new Date(a.Date).toISOString().split('T')[0].localeCompare(new Date(b.Date).toISOString().split('T')[0]) || array.sort((a, b) => (a.Record).localeCompare(b.Record)))
-  //       }
-  //     },
-  //   );
-
-  //   // Handle record expansion
-  //   const [recordID, setRecordID] = useState(null);
-
-  //   const handleExpand = (item) => {
-  //     if (recordID !== item.ID) {
-  //       setRecordID(item.ID);
-  //     } else {
-  //       setRecordID(null);
-  //     }
-  //   };
-
-  //   const ROW_PROPS = {
-  //     onClick: handleExpand,
-  //   };
-
-  //   const ROW_OPTIONS = {
-  //     renderAfterRow: (item) => (
-  //       <>
-  //         {item.ID === recordID && (
-  //           <template className="expandTableElement">
-  //             <div><strong>Region: </strong>{item.Region || "--"}</div>
-  //             <div><strong>Kart: </strong> {item.Kart || "--"}</div>
-  //             <div><strong>Racer: </strong> {item.Racer || "--"}</div>
-  //             <div><strong>Control Type: </strong> {item.ControlType || "--"}</div>
-  //             <div><strong>Submitted By: </strong> {item.SubmittedByName || "--"}</div>
-  //           </template>
-  //         )
-  //         }
-  //       </>
-  //     ),
-  //   };
-
-  //   return <CompactTable
-  //     columns={COLUMNS}
-  //     data={{ nodes }}
-  //     theme={theme}
-  //     sort={sort}
-  //     rowProps={ROW_PROPS}
-  //     rowOptions={ROW_OPTIONS}
-  //     layout={{ fixedHeader: true }} />;
-  // }
+    // const [region, setRegion] = useState("");
+    // const [kart, setKart] = useState("");
+    // const [racer, setRacer] = useState("");
+    // const [controlType, setControlType] = useState(null);
+    // const [controlTypeOther, setControlTypeOther] = useState("");
+  }
 
   return (
     <div id="recordsComponent">
@@ -281,7 +187,10 @@ export default function Records() {
                       <Td><Tooltip label={record.seasonOfRecord}>{new Date(record.Date).toISOString().split('T')[0]}</Tooltip></Td>
                       <Td>
                         {record.Video ? <ChakraLink href={record.Video} target="_blank" title="Watch Video"><IconButton aria-label="Watch Video" icon={getVideoIcon(record.Video)} /></ChakraLink> : <></>}
-                        <IconButton aria-label="Edit Record" icon={<BiEdit />} onClick={openModal} />
+                        <IconButton aria-label="Edit Record" icon={<BiEdit />} onClick={() => {
+                          setRecordToEdit(record);
+                          onOpen();
+                        }} />
                         <IconButton aria-label="Delete Record" icon={<RiDeleteBin6Line />} />
                       </Td>
                     </Tr>)
@@ -290,14 +199,21 @@ export default function Records() {
               </Tbody>
             </Table>
           </TableContainer>
-
           :
-
-
           <i>No records</i>
       }
 
-      <AddEditRecord isOpen={isOpen} onOpen={onOpen} onClose={onClose} rootData={rootData} trackData={trackData} />
+      <AddEditRecord
+        isOpen={isOpen}
+        onOpen={onOpen}
+        onClose={onClose}
+        rootData={rootData}
+        trackData={trackData}
+        sortOptions={sortOptions}
+        performSort={performSort}
+        recordToEdit={recordToEdit}
+        setRecordToEdit={setRecordToEdit}
+      />
     </div>
   );
 }
