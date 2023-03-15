@@ -64,15 +64,24 @@ export default function Header(props) {
         try {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-            })
-        } catch {
+            });
 
+            if (error) throw error;
+        } catch {
+            toast({
+                description: "An error has occured attempting to sign in. Please try again.",
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         }
     }
 
-    async function signout() {
+    async function signOut() {
         try {
             const { error } = await supabase.auth.signOut();
+
+            if (error) throw error;
         }
         catch {
             toast({
@@ -111,7 +120,7 @@ export default function Header(props) {
                     <Flex alignItems={'center'}>
                         {/* Light/Dark Mode Toggle */}
                         <Tooltip label={colorMode === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}>
-                            <Button mx={2} onClick={toggleColorMode}>
+                            <Button mx={2} p={0} onClick={toggleColorMode}>
                                 {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
                             </Button>
                         </Tooltip>
@@ -129,7 +138,7 @@ export default function Header(props) {
                                     />
                                 </MenuButton>
                                 <MenuList>
-                                    <MenuItem onClick={() => supabase.auth.signOut()}>Sign Out</MenuItem>
+                                    <MenuItem onClick={signOut}>Sign Out</MenuItem>
                                 </MenuList>
                             </Menu> : <Tooltip label="Sign in with Google">
                                 <IconButton

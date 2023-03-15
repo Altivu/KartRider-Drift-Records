@@ -1,5 +1,7 @@
 # KartRider Drift Records
 
+[Link to application on GitHub Pages](https://altivu.github.io/KartRider-Drift-Records/)
+
 ## Features
 
 - View information on the various tracks
@@ -16,3 +18,9 @@
 
 ### "Back-End"
 - Supabase
+
+## Changelog
+
+### [1.0.0] - March 15th, 2023
+
+General release of application.
