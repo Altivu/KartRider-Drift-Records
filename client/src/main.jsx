@@ -1,7 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { createClient } from '@supabase/supabase-js'
 import {
   createBrowserRouter,
   RouterProvider,
@@ -13,16 +14,17 @@ import './index.css'
 import theme from './theme'
 
 // Routes
-import Root, { loader as rootLoader, action as rootAction } from "./routes/root";
-import Contact, { loader as contactLoader } from "./routes/contact";
-import EditContact, { action as editAction } from "./routes/edit";
-import { action as destroyAction } from "./routes/destroy";
+import Root, { loader as rootLoader } from "./routes/root";
 import Index from "./routes/index";
 import Tracks, { loader as tracksLoader } from "./routes/tracks";
 import Records, { loader as recordsLoader } from "./routes/records";
+import Resources, { loader as resourcesLoader } from "./routes/resources";
 
 // Error Page
 import ErrorPage from "./error-page";
+
+// Create a single supabase client for interacting with your database
+export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PROJECT_API_KEY_PUBLIC)
 
 const router = createBrowserRouter([
   {
@@ -31,46 +33,32 @@ const router = createBrowserRouter([
     id: "root",
     errorElement: <ErrorPage />,
     loader: rootLoader,
-    action: rootAction,
     children: [
       { index: true, element: <Index /> },
-      {
-        path: "contacts/:contactId",
-        element: <Contact />,
-        loader: contactLoader,
-      },
-      {
-        path: "contacts/:contactId/edit",
-        element: <EditContact />,
-        loader: contactLoader,
-        action: editAction
-      },
-      {
-        path: "contacts/:contactId/destroy",
-        action: destroyAction,
-        errorElement: <div>Oops! There was an error.</div>,
-      },
       {
         path: "tracks",
         element: <Tracks />,
         loader: tracksLoader,
       },
       {
-        path: "tracks/:trackID",
+        path: "tracks/:trackName",
         element: <Records />,
         loader: recordsLoader
+      },
+      {
+        path: "resources",
+        element: <Resources />,
+        loader: resourcesLoader
       }
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-    <React.StrictMode>
-      <ColorModeScript initialColorMode={theme.config.initialColorMode} />
-      <ChakraProvider>
-        <RouterProvider router={router} />
-      </ChakraProvider>
-    </React.StrictMode>
-  </GoogleOAuthProvider>,
-)
+  <React.StrictMode>
+    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <ChakraProvider>
+      <RouterProvider router={router} />
+    </ChakraProvider>
+  </React.StrictMode>
+);

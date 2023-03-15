@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-
+import { supabase } from '../main'
 import {
     Button,
     Modal,
@@ -27,7 +27,7 @@ import {
 
 import { BsFillQuestionCircleFill } from 'react-icons/bs'
 
-const AddEditRecord = (props) => {
+const RecordModal = (props) => {
     const toast = useToast();
 
     const isOpen = props.isOpen;
@@ -47,7 +47,7 @@ const AddEditRecord = (props) => {
     const [region, setRegion] = useState("");
     const [kart, setKart] = useState("");
     const [racer, setRacer] = useState("");
-    const [controlType, setControlType] = useState(null);
+    const [controlType, setControlType] = useState("");
     const [controlTypeOther, setControlTypeOther] = useState("");
 
     const [bSubmittingRecord, setBSubmittingRecord] = useState(false);
@@ -59,7 +59,7 @@ const AddEditRecord = (props) => {
     useEffect(() => {
         if (props.recordToEdit && !bEditInitialized) {
             setRecord(props.recordToEdit.Record);
-            setDate(new Date(props.recordToEdit.Date).toISOString().split('T')[0]);
+            setDate(props.recordToEdit.Date);
             setPlayer(props.recordToEdit.Player);
             setVideo(props.recordToEdit.Video);
 
@@ -69,24 +69,26 @@ const AddEditRecord = (props) => {
 
             // Dropdowns don't initialize proper and need to be set with timeout + direct DOM manipulation???
             setTimeout(() => {
-                setRegion(props.recordToEdit.Region);
-                document.getElementById("region").value = props.recordToEdit.Region;
+                setRegion(props.recordToEdit.Region || "");
+                let regionElement = document.getElementById("region");
+                if (regionElement) regionElement.value = props.recordToEdit.Region || "";
 
                 let controlType = [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other";
+                if (!controlType) controlType = "";
 
                 setControlType(controlType);
-                document.getElementById("controlType").value = controlType;
-
-                console.log(record)
+                let controlTypeElement = document.getElementById("controlType");
+                if (controlTypeElement) controlTypeElement.value = controlType;
 
                 setEditInitialState({
                     record: props.recordToEdit.Record,
-                    date: new Date(props.recordToEdit.Date).toISOString().split('T')[0],
+                    date: props.recordToEdit.Date,
                     player: props.recordToEdit.Player,
                     video: props.recordToEdit.Video,
+                    region: props.recordToEdit.Region || "",
                     kart: props.recordToEdit.Kart,
                     racer: props.recordToEdit.Racer,
-                    controlType: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other",
+                    controlType: controlType,
                     controlTypeOther: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? "" : props.recordToEdit.ControlType
                 });
             });
@@ -289,24 +291,30 @@ const AddEditRecord = (props) => {
                     Region: region || null,
                     Kart: kart || null,
                     Racer: racer || null,
-                    ControlType: controlType !== "Other" ? controlType : (controlTypeOther || null),
-                    SubmittedByID: null,
-                    SubmittedByName: "AltiV",
-                    BPersonalRecord: recordType == 2,
+                    ControlType: !["", "Other"].includes(controlType) ? controlType : (controlTypeOther || null),
+                    SubmittedByID: props?.user?.id,
+                    SubmittedByName: props?.user?.id === import.meta.env.VITE_CREATOR_UUID ? "AltiV" : null,
                     BDisplay: true
                 };
 
-                await fetch(`${import.meta.env.VITE_SERVER_URL}/records`, {
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(form)
-                });
+                // // Express Server request
+                // await fetch(`${import.meta.env.VITE_SERVER_URL}/records`, {
+                //     method: "POST",
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify(form)
+                // });
+
+                // Updating ID sequence in database:
+                // SELECT setval('public."records_ID_seq"', (SELECT MAX("ID") FROM records));
+                const { data, error } = await supabase.from('records').insert(form).select();
+
+                if (error) throw error;
 
                 // Update records with the newly added record and sort based on previously selected options
-                props.trackData.Records.push(form);
-                props.performSort(props.sortOptions.column);
+                props.trackData.Records.push(data[0]);
+                props.performSort(props.sortOptions.column, props.sortOptions.order);
 
                 toast({
                     description: "Record successfully added.",
@@ -324,9 +332,10 @@ const AddEditRecord = (props) => {
                 if (date !== editInitialState.date) form.Date = date;
                 if (player !== editInitialState.player) form.Player = player || "???";
                 if (video !== editInitialState.video) form.Video = video || null;
+                if (region !== editInitialState.video) form.Region = region || null;
                 if (kart !== editInitialState.kart) form.Kart = kart || null;
                 if (racer !== editInitialState.racer) form.Racer = racer || null;
-                if (controlType !== editInitialState.controlType) form.ControlType = controlType !== "Other" ? controlType : (controlTypeOther || null);
+                if (controlType !== editInitialState.controlType) form.ControlType = !["", "Other"].includes(controlType) ? controlType : (controlTypeOther || null);
                 if (controlTypeOther !== editInitialState.controlTypeOther) form.ControlType = controlType !== "Other" ? controlType : (controlTypeOther || null);
 
                 if (!Object.keys(form).length) {
@@ -338,42 +347,32 @@ const AddEditRecord = (props) => {
                     });
                 }
                 else {
+                    // Append modified_at to form object
+                    form["modified_at"] = new Date();
 
+                    const { _, error } = await supabase.from('records').update(form).eq('ID', props.recordToEdit.ID).select();
+
+                    if (error) throw error;
+
+                    // Update records with the newly added record and sort based on previously selected options
+                    let recordToUpdate = props.trackData.Records.find(record => record.ID === props.recordToEdit.ID);
+
+                    if (recordToUpdate) {
+                        Object.keys(form).forEach(key => recordToUpdate[key] = form[key]);
+
+                        props.performSort(props.sortOptions.column, props.sortOptions.order);
+
+                        toast({
+                            description: "Record successfully edited.",
+                            status: 'success',
+                            duration: 5000,
+                            isClosable: true,
+                        });
+                    }
                 }
-
-                // setEditInitialState({
-                //     record: props.recordToEdit.Record,
-                //     date: new Date(props.recordToEdit.Date).toISOString().split('T')[0],
-                //     player: props.recordToEdit.Player,
-                //     video: props.recordToEdit.Video,
-                //     kart: props.recordToEdit.Kart,
-                //     racer: props.recordToEdit.Racer,
-                //     controlType: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? props.recordToEdit.ControlType : "Other",
-                //     controlTypeOther: [null, "Keyboard", "Controller", "Touch Screen"].includes(props.recordToEdit.ControlType) ? "" : props.recordToEdit.ControlType
-                // });
-
-                return;
-
-                await fetch(`${import.meta.env.VITE_SERVER_URL}/records/${props.recordToEdit.ID}`, {
-                    method: "PUT",
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(form)
-                });
-
-                // Update records with the newly added record and sort based on previously selected options
-                props.trackData.Records.push(form);
-                props.performSort(props.sortOptions.column);
-
-                toast({
-                    description: "Record successfully added.",
-                    status: 'success',
-                    duration: 5000,
-                    isClosable: true,
-                });
             }
 
+            resetFields();
             props.onClose();
         } catch (error) {
             console.error(error);
@@ -391,7 +390,11 @@ const AddEditRecord = (props) => {
 
     const modalClose = () => {
         if (props.recordToEdit) props.setRecordToEdit(null);
+        resetFields();
+        props.onClose();
+    }
 
+    const resetFields = () => {
         // Reset all the states one by one...
         setRecordType(1);
         setRecord("");
@@ -402,14 +405,12 @@ const AddEditRecord = (props) => {
         setRegion("");
         setKart("");
         setRacer("");
-        setControlType(null);
+        setControlType("");
         setControlTypeOther("");
 
         setBSubmittingRecord(false);
 
         setBEditInitialized(false);
-
-        props.onClose();
     }
 
     return (
@@ -542,7 +543,7 @@ const AddEditRecord = (props) => {
 
                     <FormControl>
                         <FormLabel>Region</FormLabel>
-                        <Select id="region" placeholder='--' onChange={(e => setRegion(e.target.value))}>
+                        <Select id="region" placeholder="--" onChange={(e => setRegion(e.target.value))}>
                             {props.rootData.countries.filter(country => country.Code !== "ALL").map(country => {
                                 return <option key={country.Code} value={country.Code}>{country.Code} ({country.Name})</option>
                             })}
@@ -578,7 +579,7 @@ const AddEditRecord = (props) => {
                                 </PopoverContent>
                             </Popover>
                         </Box>
-                        <Select id="controlType" placeholder='--' onChange={e => setControlType(e.target.value)}>
+                        <Select id="controlType" defaultValue={null} placeholder='--' onChange={e => { console.log(e.target.value); setControlType(e.target.value) }}>
                             <option value="Keyboard">Keyboard</option>
                             <option value="Controller">Controller</option>
                             <option value="Touch Screen">Touch Screen</option>
@@ -618,4 +619,4 @@ const AddEditRecord = (props) => {
         </Modal >);
 }
 
-export default AddEditRecord;
+export default RecordModal;

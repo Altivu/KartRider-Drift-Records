@@ -24,15 +24,6 @@
   transition-delay: 200ms;
 }
 
-nav ul a {
-  text-decoration: none;
-}
-
-/* 
-nav ul a:visited {
-  color: inherit;
-}
-
 nav a.active {
   background: hsl(224, 98%, 58%);
   color: white;
@@ -40,22 +31,13 @@ nav a.active {
 
 nav a.pending {
   color: hsl(224, 98%, 58%);
-} */
+}
 
 /* img.emblemImage {
   width: 36px;
   border: 1px solid black;
   filter: invert(1);
 } */
-
-div:has(> img.minimapImage) {
-  text-align: center;
-}
-
-img.minimapImage {
-  width: 70%;
-  filter: grayscale(1) invert(100%);
-}
 
 img.licenseImage {
   width: 20px;

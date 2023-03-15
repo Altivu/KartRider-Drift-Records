@@ -1,10 +1,12 @@
-import { ReactNode } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../main';
 import {
     Box,
     Flex,
     Avatar,
     HStack,
     Link,
+    Icon,
     IconButton,
     Button,
     Menu,
@@ -17,15 +19,29 @@ import {
     useColorModeValue,
     Stack,
     Image,
+    Tooltip,
+    useToast
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon, AddIcon, MoonIcon, SunIcon } from '@chakra-ui/icons';
+import { FcGoogle } from 'react-icons/fc';
 import { NavLink } from 'react-router-dom';
 
-const Links = ['Tracks', 'Dashboard', 'Projects', 'Team'];
+const Links = [{
+    name: "Tracks",
+    link: "tracks"
+},
+{
+    name: "Resources",
+    link: "resources"
+},
+{
+    name: "Changelog",
+    link: "changelog"
+}];
 
 const NavLinkComponent = ({ children }) => (
     <Link as={NavLink}
-        to="tracks"
+        to={children.link}
         className={({ isActive, isPending }) => isActive ? "active" : isPending ? "pending" : ""}
         px={2}
         py={1}
@@ -34,15 +50,39 @@ const NavLinkComponent = ({ children }) => (
             textDecoration: 'none',
             bg: useColorModeValue('gray.200', 'gray.700'),
         }}
-    // href={'#'}
     >
-        {children}
+        {children.name}
     </Link>
 );
 
-export default function withAction() {
+export default function Header(props) {
     const { colorMode, toggleColorMode } = useColorMode();
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const toast = useToast();
+
+    async function signInWithGoogle() {
+        try {
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+            })
+        } catch {
+
+        }
+    }
+
+    async function signout() {
+        try {
+            const { error } = await supabase.auth.signOut();
+        }
+        catch {
+            toast({
+                description: "An error has occured attempting to sign out. Please try again.",
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    }
 
     return (
         <>
@@ -64,51 +104,52 @@ export default function withAction() {
                             spacing={4}
                             display={{ base: 'none', md: 'flex' }}>
                             {Links.map((link) => (
-                                <NavLinkComponent key={link}>{link}</NavLinkComponent>
+                                <NavLinkComponent key={link.name}>{link}</NavLinkComponent>
                             ))}
                         </HStack>
                     </HStack>
                     <Flex alignItems={'center'}>
-                        <Button onClick={toggleColorMode}>
-                            {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-                        </Button>
-                        {/* <Button
-                            variant={'solid'}
-                            colorScheme={'teal'}
-                            size={'sm'}
-                            mr={4}
-                            leftIcon={<AddIcon />}>
-                            Action
-                        </Button> */}
-                        <Menu>
-                            <MenuButton
-                                as={Button}
-                                rounded={'full'}
-                                variant={'link'}
-                                cursor={'pointer'}
-                                minW={0}>
-                                <Avatar
-                                    size={'sm'}
-                                    src={
-                                        'https://images.unsplash.com/photo-1493666438817-866a91353ca9?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&fit=crop&h=200&w=200&s=b616b2c5b373a80ffc9636ba24f7a4a9'
-                                    }
+                        {/* Light/Dark Mode Toggle */}
+                        <Tooltip label={colorMode === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}>
+                            <Button mx={2} onClick={toggleColorMode}>
+                                {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+                            </Button>
+                        </Tooltip>
+                        {props.bErrorPage ? <></> :
+                            props.session ? <Menu>
+                                <MenuButton
+                                    as={Button}
+                                    rounded={'full'}
+                                    variant={'link'}
+                                    cursor={'pointer'}
+                                    minW={0}>
+                                    <Avatar
+                                        size={'sm'}
+                                        src={props?.user?.user_metadata?.avatar_url}
+                                    />
+                                </MenuButton>
+                                <MenuList>
+                                    <MenuItem onClick={() => supabase.auth.signOut()}>Sign Out</MenuItem>
+                                </MenuList>
+                            </Menu> : <Tooltip label="Sign in with Google">
+                                <IconButton
+                                    aria-label="Sign in with Google"
+                                    icon={<Box as={FcGoogle} />}
+                                    isRound border='1px'
+                                    borderColor='gray.200'
+                                    onClick={signInWithGoogle}
                                 />
-                            </MenuButton>
-                            <MenuList>
-                                <MenuItem>Link 1</MenuItem>
-                                <MenuItem>Link 2</MenuItem>
-                                <MenuDivider />
-                                <MenuItem>Link 3</MenuItem>
-                            </MenuList>
-                        </Menu>
+                            </Tooltip>
+                        }
                     </Flex>
                 </Flex>
 
+                {/* Nav Dropdown when screen width is smaller */}
                 {isOpen ? (
                     <Box pb={4} display={{ md: 'none' }}>
                         <Stack as={'nav'} spacing={4}>
                             {Links.map((link) => (
-                                <NavLink key={link}>{link}</NavLink>
+                                <NavLink key={link.name} to={link.link}>{link.name}</NavLink>
                             ))}
                         </Stack>
                     </Box>
