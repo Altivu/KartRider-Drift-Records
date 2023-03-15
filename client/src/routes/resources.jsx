@@ -5,6 +5,7 @@ import { supabase } from "../main";
 import { Heading, Table, TableContainer, Td, Thead, Tbody, Tr, HStack, Th, Text, Link } from '@chakra-ui/react';
 
 import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { ExternalLinkIcon } from '@chakra-ui/icons';
 
 export async function loader() {
     try {
@@ -61,7 +62,20 @@ export default function Resources() {
         const sorter = (a, b) => {
             switch (column) {
                 case "name": return a.name.localeCompare(b.name);
-                case "creator": return a.creator.localeCompare(b.creator) || a.name.localeCompare(b.name);
+                case "creator": {
+                    if (!a.creator && b.creator) {
+                        return 1;
+                    }
+                    else if (a.creator && !b.creator) {
+                        return -1;
+                    }
+                    else if (!a.creator && !b.creator) {
+                        return a.name.localeCompare(b.name);
+                    }
+                    else {
+                        return a.creator.localeCompare(b.creator) || a.name.localeCompare(b.name);
+                    }
+                }
                 case "language": return a.language.localeCompare(b.language) || a.name.localeCompare(b.name);
                 case "category": return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
                 case "type": return a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
@@ -110,7 +124,7 @@ export default function Resources() {
                         {
                             resources.map(resource => {
                                 return (<Tr key={resource.id}>
-                                    <Td><Link href={resource.url} isExternal>{resource.name}</Link></Td>
+                                    <Td><Link href={resource.url} isExternal>{resource.name}</Link><ExternalLinkIcon mx='2px' /></Td>
                                     <Td>{resource.creator}</Td>
                                     <Td>{resource.language}</Td>
                                     <Td>{resource.category}</Td>

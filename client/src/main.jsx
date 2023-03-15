@@ -19,6 +19,7 @@ import Index from "./routes/index";
 import Tracks, { loader as tracksLoader } from "./routes/tracks";
 import Records, { loader as recordsLoader } from "./routes/records";
 import Resources, { loader as resourcesLoader } from "./routes/resources";
+import Changelog from "./routes/changelog";
 
 // Error Page
 import ErrorPage from "./error-page";
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
         path: "resources",
         element: <Resources />,
         loader: resourcesLoader
+      },
+      {
+        path: "changelog",
+        element: <Changelog />,
       }
     ],
   },

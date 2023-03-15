@@ -19,9 +19,6 @@ import {
     Heading,
     Divider,
     Select,
-    Spinner,
-    RadioGroup, Radio,
-    HStack,
     useToast
 } from '@chakra-ui/react'
 
@@ -579,7 +576,7 @@ const RecordModal = (props) => {
                                 </PopoverContent>
                             </Popover>
                         </Box>
-                        <Select id="controlType" defaultValue={null} placeholder='--' onChange={e => { console.log(e.target.value); setControlType(e.target.value) }}>
+                        <Select id="controlType" defaultValue={null} placeholder='--' onChange={e => setControlType(e.target.value)}>
                             <option value="Keyboard">Keyboard</option>
                             <option value="Controller">Controller</option>
                             <option value="Touch Screen">Touch Screen</option>

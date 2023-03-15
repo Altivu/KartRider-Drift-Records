@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { Form, useLoaderData, NavLink, useOutletContext, useRouteLoaderData } from "react-router-dom";
+import { useState, useRef } from "react";
+import { useLoaderData, NavLink, useOutletContext, useRouteLoaderData } from "react-router-dom";
 import { supabase } from '../main';
 
 import {
@@ -8,11 +8,8 @@ import {
   Button,
   useDisclosure,
   Heading,
-  Grid,
-  GridItem,
   Flex,
   Spacer,
-  Link as ChakraLink,
   Table, TableContainer, Thead, Tr, Th, Td, Tbody,
   IconButton,
   HStack,
@@ -97,10 +94,6 @@ export default function Records() {
   const { isOpen: isOpenVideoModal, onOpen: onOpenVideoModal, onClose: onCloseVideoModal } = useDisclosure();
   // Delete Record Popover
   const { isOpen: isOpenDeletePopover, onOpen: onOpenDeletePopover, onClose: onCloseDeletePopover } = useDisclosure();
-
-  // const [isOpenDeletePopover, setIsOpenDeletePopover] = useState(false);
-  // const onOpenDeletePopover = () => setIsOpenDeletePopover(true);
-  // const onCloseDeletePopover = () => setIsOpenDeletePopover(false);
 
   const trackData = useLoaderData();
   const rootData = useRouteLoaderData("root");
