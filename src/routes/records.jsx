@@ -41,7 +41,7 @@ export async function loader({ params }) {
   // Function in database
   /*
 CREATE OR REPLACE FUNCTION public.get_track_with_records(
-	trackname character varying DEFAULT NULL::character varying)
+  trackname character varying DEFAULT NULL::character varying)
     RETURNS TABLE("ID" bigint, "InternalID" character varying, "Name" character varying, "Records" json) 
     LANGUAGE 'sql'
     COST 100
@@ -52,17 +52,17 @@ AS $BODY$
 
 SELECT *
 FROM
-	(SELECT TRACKS."ID",
-			TRACKS."InternalID",
-			TRACKS."Name",
-			CASE
-							WHEN COUNT(RECORDS.*) = 0 THEN '[]'
-							ELSE JSON_AGG(RECORDS.* ORDER BY RECORDS."Record")
-			END "Records"
-		FROM TRACKS
-		LEFT JOIN RECORDS ON TRACKS."ID" = RECORDS."TrackID"
-		WHERE TRACKS."Name" = CASE WHEN trackName IS NOT NULL THEN trackName ELSE TRACKS."Name" END
-		GROUP BY TRACKS."ID") TRACKS_WITH_RECORDS;
+  (SELECT TRACKS."ID",
+      TRACKS."InternalID",
+      TRACKS."Name",
+      CASE
+              WHEN COUNT(RECORDS.*) = 0 THEN '[]'
+              ELSE JSON_AGG(RECORDS.* ORDER BY RECORDS."Record")
+      END "Records"
+    FROM TRACKS
+    LEFT JOIN RECORDS ON TRACKS."ID" = RECORDS."TrackID"
+    WHERE TRACKS."Name" = CASE WHEN trackName IS NOT NULL THEN trackName ELSE TRACKS."Name" END
+    GROUP BY TRACKS."ID") TRACKS_WITH_RECORDS;
 $BODY$;
 */
 
@@ -88,7 +88,18 @@ export default function Records() {
   // Video Modal 
   const { isOpen: isOpenVideoModal, onOpen: onOpenVideoModal, onClose: onCloseVideoModal } = useDisclosure();
   // Delete Record Popover
-  const { isOpen: isOpenDeletePopover, onOpen: onOpenDeletePopover, onClose: onCloseDeletePopover } = useDisclosure();
+  // const { isOpen: isOpenDeletePopover, onOpen: onOpenDeletePopover, onClose: onCloseDeletePopover } = useDisclosure();
+
+  // Since a page can have multiple records where the delete popover can appear, track an ID instead of a boolean
+  const [deletePopover, setDeletePopover] = useState(null);
+
+  const onOpenDeletePopover = (record) => {
+    setDeletePopover(record.ID);
+  }
+
+  const onCloseDeletePopover = () => {
+    setDeletePopover(null);
+  }
 
   const trackData = useLoaderData();
   const rootData = useRouteLoaderData("root");
@@ -110,7 +121,7 @@ export default function Records() {
     { field: "Date", columnName: "Date" },
     { field: "Actions", columnName: "Actions" },
   ];
-  
+
   // Set season description on relase date column
   trackData.Records.forEach(record => {
     // Get the season AFTER the track's season due to date comparator logic
@@ -186,17 +197,19 @@ export default function Records() {
       status: 'info'
     });
 
-    const { error } = await supabase.from('records').delete().eq({ id: record.ID });
+    const { error } = await supabase.from('records').delete().eq('ID', record.ID);
 
     if (error) {
       toast.update(toastIdRef.current, {
-        description: `An error has occured attempting to delete your personal record for ${trackToEdit.Name}. Please refresh the page and try again.`,
+        description: `An error has occured attempting to delete your submitted record for ${trackData.Name}. Please refresh the page and try again.`,
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
     }
     else {
+      onCloseDeletePopover();
+
       trackData.Records.splice(trackData.Records.findIndex(i => i === record), 1);
 
       toast.update(toastIdRef.current, {
@@ -212,7 +225,7 @@ export default function Records() {
 
   return (
     <div id="recordsComponent">
-      <Text><NavLink to="../tracks" style={{ display: "flex", alignItems: "center" }}><BiArrowBack />&nbsp;Return to Tracks List</NavLink></Text>
+      <Text><NavLink to="../tracks" style={{ display: "inline-flex", alignItems: "center" }}><BiArrowBack />&nbsp;Return to Tracks List</NavLink></Text>
 
       <Flex alignItems={"center"}>
         <Heading as='h3' size='lg' mt={4} mb={2}>Records for {trackData.Name}</Heading>
@@ -258,8 +271,8 @@ export default function Records() {
                             }} />
                           </Tooltip>
                           <Popover
-                            isOpen={isOpenDeletePopover}
-                            onOpen={onOpenDeletePopover}
+                            isOpen={deletePopover === record.ID}
+                            onOpen={() => onOpenDeletePopover(record)}
                             onClose={onCloseDeletePopover}>
                             {/* https://github.com/chakra-ui/chakra-ui/issues/2843#issuecomment-748641805 */}
                             <Tooltip label="Delete Record">
