@@ -20,9 +20,7 @@ const VideoModal = (props) => {
             // Taken from https://stackoverflow.com/a/43706989 and converted from Python to Javascript
             let embedURL = url
                 .replace(/(?:https:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, "https://www.youtube.com/embed/$1")
-                .replace("[&?]t=", "?start=");
-
-            console.log(embedURL);
+                .replace(/[&?]t=/, "?start=");
 
             return embedURL;
         }
