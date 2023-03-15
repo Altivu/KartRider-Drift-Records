@@ -290,19 +290,10 @@ const RecordModal = (props) => {
                     Racer: racer || null,
                     ControlType: !["", "Other"].includes(controlType) ? controlType : (controlTypeOther || null),
                     SubmittedByID: props?.user?.id,
-                    SubmittedByName: props?.user?.id === import.meta.env.VITE_CREATOR_UUID ? "AltiV" : null,
+                    SubmittedByName: (import.meta.env.VITE_CREATOR_UUID && props?.user?.id === import.meta.env.VITE_CREATOR_UUID) ? "AltiV" : null,
                     BDisplay: true
                 };
-
-                // // Express Server request
-                // await fetch(`${import.meta.env.VITE_SERVER_URL}/records`, {
-                //     method: "POST",
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //     },
-                //     body: JSON.stringify(form)
-                // });
-
+                
                 // Updating ID sequence in database:
                 // SELECT setval('public."records_ID_seq"', (SELECT MAX("ID") FROM records));
                 const { data, error } = await supabase.from('records').insert(form).select();
@@ -329,7 +320,7 @@ const RecordModal = (props) => {
                 if (date !== editInitialState.date) form.Date = date;
                 if (player !== editInitialState.player) form.Player = player || "???";
                 if (video !== editInitialState.video) form.Video = video || null;
-                if (region !== editInitialState.video) form.Region = region || null;
+                if (region !== editInitialState.region) form.Region = region || null;
                 if (kart !== editInitialState.kart) form.Kart = kart || null;
                 if (racer !== editInitialState.racer) form.Racer = racer || null;
                 if (controlType !== editInitialState.controlType) form.ControlType = !["", "Other"].includes(controlType) ? controlType : (controlTypeOther || null);
@@ -386,7 +377,6 @@ const RecordModal = (props) => {
     }
 
     const modalClose = () => {
-        if (props.recordToEdit) props.setRecordToEdit(null);
         resetFields();
         props.onClose();
     }
@@ -407,6 +397,7 @@ const RecordModal = (props) => {
 
         setBSubmittingRecord(false);
 
+        if (props.recordToEdit) props.setRecordToEdit(null);
         setBEditInitialized(false);
     }
 

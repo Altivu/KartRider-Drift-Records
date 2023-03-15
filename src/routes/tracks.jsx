@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Form, useLoaderData, NavLink, useRouteLoaderData, useOutletContext } from "react-router-dom";
+import { useState, useRef } from 'react';
+import { useLoaderData, NavLink, useRouteLoaderData, useOutletContext } from "react-router-dom";
 import { supabase } from "../main";
 
 import { Button, Heading, Table, TableContainer, Td, Thead, Tbody, Tr, Image, HStack, Tooltip, Th, Text, Link as ChakraLink, useToast, useDisclosure } from '@chakra-ui/react';
@@ -12,11 +12,6 @@ import EditableRecord from '../components/shared/EditableRecord'
 
 export async function loader({ params }) {
     try {
-        // // Express server call
-        // const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks`);
-
-        // return response.json();
-
         // Supabase call
         // This is a specific view that uses DISTINCT ON and PARTITION BY
         /*
@@ -318,6 +313,7 @@ export default function Tracks(props) {
                                             objectFit="contain"
                                             filter={track.InternalID ? "grayscale(1) invert(100%);" : ""}
                                             fallbackSrc='https://dummyimage.com/100'
+                                            minWidth={50}
                                         />
                                     </Td>
                                     <Td>{track.Name}</Td>
@@ -355,6 +351,7 @@ export default function Tracks(props) {
                                             objectFit="contain"
                                             filter={track.InternalID ? "grayscale(1) invert(100%);" : ""}
                                             fallbackSrc='https://dummyimage.com/100'
+                                            minWidth={50}
                                         />
                                     </Td>
                                 </Tr>)

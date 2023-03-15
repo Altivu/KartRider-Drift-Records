@@ -12,11 +12,6 @@ export async function loader({ request }) {
     let countries = [];
 
     try {
-        // // Yes I know this looks kind of ridiculous
-        // seasons = await (await fetch(`${import.meta.env.VITE_SERVER_URL}/seasons`)).json();
-        // languages = await (await fetch(`${import.meta.env.VITE_SERVER_URL}/languages`)).json();
-        // countries = await (await (fetch(`${import.meta.env.VITE_SERVER_URL}/countries`))).json();
-
         const { data: seasonsData, error: seasonsError } = await supabase.from('seasons').select();
         const { data: countriesData, error: countriesError } = await supabase.from('countries').select().order('Code');
 

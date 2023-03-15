@@ -4,7 +4,8 @@ import ReactDOM from 'react-dom/client'
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
 import { createClient } from '@supabase/supabase-js'
 import {
-  createBrowserRouter,
+  // createBrowserRouter,
+  createHashRouter,
   RouterProvider,
 } from "react-router-dom";
 
@@ -27,7 +28,8 @@ import ErrorPage from "./error-page";
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PROJECT_API_KEY_PUBLIC)
 
-const router = createBrowserRouter([
+// createBrowserRouter does not work on Github Pages, otherwise it is preferred
+const router = createHashRouter([
   {
     path: "/",
     element: <Root />,

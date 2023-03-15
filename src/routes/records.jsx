@@ -37,11 +37,6 @@ import RecordModal from "../components/RecordModal";
 import VideoModal from "../components/VideoModal";
 
 export async function loader({ params }) {
-  // // Express Server call
-  // const response = await fetch(`${import.meta.env.VITE_SERVER_URL}/tracks/${params.trackID}`);
-
-  // return response.json();
-
   // Supabase call
   // Function in database
   /*
@@ -103,8 +98,6 @@ export default function Records() {
     order: null
   });
 
-  const addEditRecordRef = useRef(null);
-
   // For Edit Record if applicable
   const [recordToEdit, setRecordToEdit] = useState(null);
 
@@ -117,16 +110,7 @@ export default function Records() {
     { field: "Date", columnName: "Date" },
     { field: "Actions", columnName: "Actions" },
   ];
-
-  // Testing setting background image
-  // const detailRef = useOutletContext()?.current;
-
-  // console.log(detailRef)
-
-  // if (detailRef) {
-  //   detailRef.style.backgroundImage = `url('https://github.com/Altivu/KRD-ui/blob/main/Track/Loading/${trackData.InternalID}.png?raw=true')`;
-  // }
-
+  
   // Set season description on relase date column
   trackData.Records.forEach(record => {
     // Get the season AFTER the track's season due to date comparator logic
@@ -266,7 +250,7 @@ export default function Records() {
                             onOpenVideoModal();
                           }} />
                         </Tooltip>
-                        {(user?.id === import.meta.env.VITE_CREATOR_UUID || user?.id === record.SubmittedByID) ? <>
+                        {((import.meta.env.VITE_CREATOR_UUID && user?.id === import.meta.env.VITE_CREATOR_UUID) || user?.id === record.SubmittedByID) ? <>
                           <Tooltip label="Edit Record">
                             <IconButton aria-label="Edit Record" icon={<BiEdit />} onClick={() => {
                               setRecordToEdit(record);
