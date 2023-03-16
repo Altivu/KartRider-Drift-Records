@@ -21,6 +21,12 @@
 
 ## Changelog
 
+### [1.1.0] - March 16th, 2023
+
+- Added basic video embed for Bilibili URLs
+- Added logged in email information to header dropdown
+  - This acts as an additional indicator of what account you're using in case the avatar image does not properly load
+
 ### [1.0.0] - March 15th, 2023
 
 General release of application.

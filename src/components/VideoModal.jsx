@@ -16,13 +16,25 @@ const VideoModal = (props) => {
 
     const formatLinkForEmbed = (url) => {
         if (url) {
-            // Check if this is a valid YouTube link (I'm not checking for anything else right now)
+
+            // YouTube URL
             // Taken from https://stackoverflow.com/a/43706989 and converted from Python to Javascript
-            let embedURL = url
+            if (/(youtube\.com|youtu\.be)/.test(url)) {
+                let embedURL = url
                 .replace(/(?:https:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/, "https://www.youtube.com/embed/$1")
                 .replace(/[&?]t=/, "?start=");
 
             return embedURL;
+            }
+            // Bilibili URL
+            else if (/bilibili\.com/.test(url)) {
+                let embedURL = url.replace(/(?:https:\/\/)?(?:www\.)?(?:bilibili\.com)\/(?:video\/)?(.+)/, "//player.bilibili.com/player.html?bvid=$1");
+
+                return embedURL;
+            }
+            else {
+                return url;
+            }
         }
         else {
             return url;
