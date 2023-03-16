@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { supabase } from '../../main';
 import {
     Box,
@@ -6,7 +5,6 @@ import {
     Avatar,
     HStack,
     Link,
-    Icon,
     IconButton,
     Button,
     Menu,
@@ -22,7 +20,7 @@ import {
     Tooltip,
     useToast
 } from '@chakra-ui/react';
-import { HamburgerIcon, CloseIcon, AddIcon, MoonIcon, SunIcon } from '@chakra-ui/icons';
+import { HamburgerIcon, CloseIcon, MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { FcGoogle } from 'react-icons/fc';
 import { NavLink } from 'react-router-dom';
 
@@ -138,6 +136,8 @@ export default function Header(props) {
                                     />
                                 </MenuButton>
                                 <MenuList>
+                                    <MenuItem isDisabled>Signed in as:&nbsp;<strong>{props?.user?.email}</strong></MenuItem>
+                                    <MenuDivider />
                                     <MenuItem onClick={signOut}>Sign Out</MenuItem>
                                 </MenuList>
                             </Menu> : <Tooltip label="Sign in with Google">
