@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigation } from "react-router-dom";
 import { supabase } from "../main";
 
 import { BsGlobe } from "react-icons/bs";
@@ -30,6 +30,8 @@ export async function loader({ request }) {
 }
 
 export default function Root() {
+    const navigation = useNavigation();
+
     // Store Google authentication session
     const [session, setSession] = useState(null);
     const [user, setUser] = useState(null);
@@ -61,7 +63,7 @@ export default function Root() {
 
     return (
         <>
-            <Header session={session} user={user} bErrorPage={false}/>
+            <Header session={session} user={user} bErrorPage={false} />
             <div id="detail" ref={detailRef}
                 className={
                     navigation.state === "loading" ? "loading" : ""

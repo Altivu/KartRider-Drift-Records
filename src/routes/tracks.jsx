@@ -36,6 +36,10 @@ CREATE OR REPLACE FUNCTION PUBLIC.GET_TRACKS_WITH_TOP_AND_PERSONAL_RECORD(USERID
   ORDER BY tracks."ListOrder";
 $BODY$;
         */
+
+        // // Test forced wait before loading
+        // await new Promise(resolve => setTimeout(resolve, 2000));
+
         const { data, error } = await supabase.rpc('get_tracks_with_top_and_personal_record', { "userid": localStorage.getItem("userID") });
 
         if (error) throw error;

@@ -6,6 +6,13 @@ export default function Changelog() {
             <Heading as='h3' size='lg' mt={4} mb={2}>Changelog</Heading>
             <Divider mb={4}/>
 
+            <Text fontSize='lg'>[1.0.2] - March 19th, 2023</Text>
+            <UnorderedList>
+                <ListItem>Fixed application not working in Firefox</ListItem>
+            </UnorderedList>
+
+            <Divider my={4}/>
+
             <Text fontSize='lg'>[1.0.1] - March 16th, 2023</Text>
             <UnorderedList>
                 <ListItem>Added basic video embed for Bilibili URLs</ListItem>

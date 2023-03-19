@@ -21,6 +21,10 @@
 
 ## Changelog
 
+### [1.0.2] - March 19th, 2023
+
+- Fixed application not working in Firefox
+
 ### [1.0.1] - March 16th, 2023
 
 - Added basic video embed for Bilibili URLs
