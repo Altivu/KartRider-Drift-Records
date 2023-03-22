@@ -1,16 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLoaderData, NavLink, useRouteLoaderData, useOutletContext } from "react-router-dom";
 import { supabase } from "../main";
 
-import { Button, Heading, Table, TableContainer, Td, Thead, Tbody, Tr, Image, HStack, Tooltip, Th, Text, Link as ChakraLink, useToast, useDisclosure } from '@chakra-ui/react';
+import { Button, Heading, Table, TableContainer, Td, Thead, Tbody, Tr, Image, HStack, Tooltip, Th, Text, Link as ChakraLink, useToast, useDisclosure, SimpleGrid, Box, Input, InputGroup, InputLeftElement, FormControl, FormLabel, Switch } from '@chakra-ui/react';
 
 import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 
 import VideoModal from "../components/VideoModal";
 
 import EditableRecord from '../components/shared/EditableRecord'
+import { SearchIcon } from '@chakra-ui/icons';
+import { BsFillQuestionCircleFill } from 'react-icons/bs';
 
-export async function loader({ params }) {
+export async function loader({ _ }) {
     try {
         // Supabase call
         // This is a specific view that uses DISTINCT ON and PARTITION BY
@@ -76,7 +78,7 @@ const DifficultyComponent = props => {
     );
 }
 
-export default function Tracks(props) {
+export default function Tracks() {
     const tracks = useLoaderData();
     const rootData = useRouteLoaderData("root");
     const toast = useToast();
@@ -89,6 +91,15 @@ export default function Tracks(props) {
 
     const [_, user] = useOutletContext();
 
+    const [filteredTracks, setFilteredTracks] = useState(tracks);
+    const [trackThemeSearchResult, setTrackThemeSearchResult] = useState("");
+
+    let trackThemeSearchTimer = null;
+
+    // More table filters
+    const [bSpeedGrandPrix, setBSpeedGrandPrix] = useState(localStorage.getItem("bSpeedGrandPrix") === "true" || false);
+    const [bRecordsView, setBRecordsView] = useState(localStorage.getItem("bRecordsView") === "true" || false);
+
     // Used for the video modal when clicking a "top record" link
     const [trackData, setTrackData] = useState(null);
     const [recordToView, setRecordToView] = useState(null);
@@ -99,7 +110,7 @@ export default function Tracks(props) {
     });
 
     const COLUMNS = [
-        { field: "InternalID", columnName: "ㅤㅤㅤㅤ" },
+        { field: "InternalID", columnName: "" },
         { field: "Name", columnName: "Name" },
         { field: "Theme", columnName: "Theme" },
         { field: "License", columnName: "License" },
@@ -111,15 +122,24 @@ export default function Tracks(props) {
         { field: "Records", columnName: "Records" }
     ];
 
+    const COLUMNS_RECORD_VIEW = [
+        { field: "InternalID", columnName: "" },
+        { field: "Name", columnName: "Name" },
+        { field: "Theme", columnName: "Theme" },
+        { field: "TopSavedRecord", columnName: "Top Saved Record" },
+        { field: "Player", columnName: "Player" },
+        { field: "TopRecordDate", columnName: "Date of Record" },
+    ];
+
     // Set season description on relase date column
     if (rootData.seasons) {
         tracks.forEach(track => {
             // Get the season AFTER the track's season due to date comparator logic
-            let indexOfSeasonOfRecord = rootData.seasons.findIndex(s => new Date(s.Date) > new Date(track.ReleaseDate));
+            let indexOfSeasonOfReleaseDate = rootData.seasons.findIndex(s => new Date(s.Date) > new Date(track.ReleaseDate));
 
-            if (indexOfSeasonOfRecord === -1) indexOfSeasonOfRecord = rootData.seasons.length;
+            if (indexOfSeasonOfReleaseDate === -1) indexOfSeasonOfReleaseDate = rootData.seasons.length;
 
-            track.seasonOfRecord = rootData.seasons[indexOfSeasonOfRecord - 1]?.Description;
+            track.seasonOfReleaseDate = rootData.seasons[indexOfSeasonOfReleaseDate - 1]?.Description;
         });
     }
 
@@ -140,47 +160,53 @@ export default function Tracks(props) {
             order
         });
 
-        const sorter = (a, b) => {
-            switch (column) {
-                case "Name": return a.Name.localeCompare(b.Name);
-                case "Theme": return a.Theme.localeCompare(b.Theme) || a.Name.localeCompare(b.Name);
-                case "License": {
-                    try {
-                        return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || a.Name.localeCompare(b.Name));
-                    }
-                    catch {
-                        return 0;
-                    }
+        performSort(column, order);
+    }
+
+    const sorter = (a, b, column) => {
+        switch (column) {
+            case "Name": return a.Name.localeCompare(b.Name);
+            case "Theme": return a.Theme.localeCompare(b.Theme) || a.Name.localeCompare(b.Name);
+            case "License": {
+                try {
+                    return ((LICENSE_ORDER.indexOf(a.License) - LICENSE_ORDER.indexOf(b.License)) || a.Name.localeCompare(b.Name));
                 }
-                case "Difficulty": return a.Difficulty - b.Difficulty || a.Name.localeCompare(b.Name);
-                case "Laps": return a.Laps - b.Laps || a.Name.localeCompare(b.Name);
-                case "BItemMode": {
-                    if (a.BItemMode && !b.BItemMode) return -1;
-                    else if (!a.BItemMode && b.BItemMode) return 1;
-                    else return a.Name.localeCompare(b.Name)
-                }
-                case "ReleaseDate": return a.ReleaseDate.localeCompare(b.ReleaseDate) || a.Name.localeCompare(b.Name);
-                case "TopSavedRecord": {
-                    if (!a.Record && b.Record) {
-                        return 1;
-                    }
-                    else if (a.Record && !b.Record) {
-                        return -1;
-                    }
-                    else if (!a.Record && !b.Record) {
-                        return a.Name.localeCompare(b.Name);
-                    }
-                    else {
-                        return a.Record.localeCompare(b.Record);
-                    }
+                catch {
+                    return 0;
                 }
             }
+            case "Difficulty": return a.Difficulty - b.Difficulty || a.Name.localeCompare(b.Name);
+            case "Laps": return a.Laps - b.Laps || a.Name.localeCompare(b.Name);
+            case "BItemMode": {
+                if (a.BItemMode && !b.BItemMode) return -1;
+                else if (!a.BItemMode && b.BItemMode) return 1;
+                else return a.Name.localeCompare(b.Name)
+            }
+            case "ReleaseDate": return a.ReleaseDate.localeCompare(b.ReleaseDate) || a.Name.localeCompare(b.Name);
+            case "TopSavedRecord": {
+                if (!a.Record && b.Record) {
+                    return 1;
+                }
+                else if (a.Record && !b.Record) {
+                    return -1;
+                }
+                else if (!a.Record && !b.Record) {
+                    return a.Name.localeCompare(b.Name);
+                }
+                else {
+                    return a.Record.localeCompare(b.Record);
+                }
+            }
+            case "Player": return a.Player?.localeCompare(b.Player) || a.Name.localeCompare(b.Name);
+            case "TopRecordDate": return a.TopRecordDate?.localeCompare(b.TopRecordDate) || a.Name.localeCompare(b.Name);
         }
+    }
 
-        tracks.sort((a, b) => {
+    const performSort = (column, order) => {
+        filteredTracks.sort((a, b) => {
             if (!order) return a.ListOrder - b.ListOrder;
-            else if (order === "Asc") return sorter(a, b);
-            else return sorter(b, a);
+            else if (order === "Asc") return sorter(a, b, column);
+            else return sorter(b, a, column);
         });
     }
 
@@ -288,26 +314,92 @@ export default function Tracks(props) {
         }
     }
 
+    useEffect(() => {
+        setFilteredTracks(
+            // Filter by search
+            tracks.filter(track => track.Name.toLocaleLowerCase().includes(trackThemeSearchResult) || track.Theme.toLocaleLowerCase().includes(trackThemeSearchResult))
+
+                // Filter by speed mode grand prix
+                .filter(track => !bSpeedGrandPrix || (!track.BItemMode || ["Cogwheel Crush", "Magma Cavern", "Mother Lode"].includes(track.Name)))
+
+                // Apply sort individually from the standard header clicking
+                .sort((a, b) => {
+                    if (!sortOptions.order) return a.ListOrder - b.ListOrder;
+                    else if (sortOptions.order === "Asc") return sorter(a, b, sortOptions.column);
+                    else return sorter(b, a, sortOptions.column);
+                })
+        );
+    }, [tracks, trackThemeSearchResult, bSpeedGrandPrix]);
+
     return (
         <>
             <Heading as='h3' size='lg' mt={4} mb={2}>Tracks</Heading>
+            <SimpleGrid columns={[1, 2, 3]} spacing={5}>
+                <Box>
+                    <InputGroup>
+                        <InputLeftElement pointerEvents='none' children={<SearchIcon />}></InputLeftElement>
+                        <Input placeholder='Search by track name or theme' onChange={e => {
+                            clearTimeout(trackThemeSearchTimer);
+
+                            trackThemeSearchTimer = setTimeout(() => {
+                                setTrackThemeSearchResult(e.target.value)
+                            }, 500);
+                        }}></Input>
+                    </InputGroup>
+                </Box>
+                <Box>
+                    <FormControl as={SimpleGrid} columns={{ base: 2 }} alignItems='center'>
+                        <FormLabel htmlFor='bSpeedGrandPrix' mb='0'>
+                            Show Speed Grand Prix Tracks Only
+                        </FormLabel>
+                        <Switch id='bSpeedGrandPrix' value={bSpeedGrandPrix} isChecked={bSpeedGrandPrix} onChange={e => {
+                            localStorage.setItem("bSpeedGrandPrix", e.target.checked);
+                            setBSpeedGrandPrix(e.target.checked)
+                        }} />
+                    </FormControl>
+                </Box>
+                <Box>
+                    <FormControl as={SimpleGrid} columns={{ base: 2 }} alignItems='center'>
+                        <Box display="flex" alignItems="baseline">
+                            <FormLabel htmlFor='bRecordsView' mb='0'>
+                                Show Records View </FormLabel>
+                            <Tooltip label="Strips out extraneous track info and only shows the top saved record details.">
+                                <span><BsFillQuestionCircleFill /></span>
+                            </Tooltip>
+                        </Box>
+                        <Switch id='bRecordsView' value={bRecordsView} isChecked={bRecordsView} onChange={e => {
+                            localStorage.setItem("bRecordsView", e.target.checked);
+                            setBRecordsView(e.target.checked)
+                        }} />
+                    </FormControl>
+                </Box>
+            </SimpleGrid>
             <TableContainer whiteSpace="normal">
                 <Table variant="simple">
                     <Thead>
                         <Tr>
-                            {COLUMNS.map((column, index) => <Th key={index}>
-                                <HStack>
-                                    <Text fontSize='sm' style={{ cursor: !["InternalID", "Records"].includes(column.field) ? "pointer" : "default" }} onClick={() => updateSortOptions(column.field)}>{column.columnName}</Text>
-                                    {getSortIcon(column.field)}
-                                </HStack>
-                            </Th>)}
+                            {!bRecordsView ?
+                                COLUMNS.map((column, index) => <Th key={index}>
+                                    <HStack>
+                                        <Text fontSize='sm' style={{ cursor: !["InternalID", "Records"].includes(column.field) ? "pointer" : "default" }} onClick={() => updateSortOptions(column.field)}>{column.columnName}</Text>
+                                        {getSortIcon(column.field)}
+                                    </HStack>
+                                </Th>)
+                                :
+                                COLUMNS_RECORD_VIEW.map((column, index) => <Th key={index}>
+                                    <HStack>
+                                        <Text fontSize='sm' style={{ cursor: !["InternalID"].includes(column.field) ? "pointer" : "default" }} onClick={() => updateSortOptions(column.field)}>{column.columnName}</Text>
+                                        {getSortIcon(column.field)}
+                                    </HStack>
+                                </Th>)
+                            }
                             {user ? <Th><Text fontSize='sm' style={{ cursor: "default" }}>Your Saved Record (Click to edit)</Text></Th> : <></>}
-                            <Th><Text fontSize='sm' style={{ cursor: "default" }}>ㅤㅤㅤㅤ</Text></Th>
+                            <Th><Text fontSize='sm' style={{ cursor: "default" }}></Text></Th>
                         </Tr>
                     </Thead>
                     <Tbody>
                         {
-                            tracks.map(track => {
+                            filteredTracks.map(track => {
                                 return (<Tr key={track.ID}>
                                     <Td textAlign="-webkit-center">
                                         <Image
@@ -322,31 +414,56 @@ export default function Tracks(props) {
                                     </Td>
                                     <Td>{track.Name}</Td>
                                     <Td>{track.Theme}</Td>
-                                    <Td>{getLicenseField(track.License)}</Td>
-                                    <Td><DifficultyComponent difficulty={track.Difficulty}></DifficultyComponent></Td>
-                                    <Td>{track.Laps}</Td>
-                                    <Td>{track.BItemMode ? "✓" : ""}</Td>
-                                    <Td><Tooltip label={track?.seasonOfRecord}>{track.ReleaseDate}</Tooltip></Td>
-                                    <Td>{track.Record ? <Tooltip label={`by ${track.Player} on ${track.TopRecordDate}`}>
-                                        <ChakraLink onClick={() => {
-                                            setTrackData(track);
-                                            setRecordToView({
-                                                Record: track.Record,
-                                                Player: track.Player,
-                                                Video: track.Video
-                                            });
 
-                                            onOpenVideoModal();
-                                        }}>{track.Record}</ChakraLink>
-                                    </Tooltip> : "--:--.---"}</Td>
-                                    <Td>
-                                        <NavLink to={`${track.Name}`}>
-                                            <Button>View ({track.NumberOfRecords || 0})</Button>
-                                        </NavLink>
-                                    </Td>
+                                    {   // Standard View
+                                        !bRecordsView ? <>
+                                            <Td>{getLicenseField(track.License)}</Td>
+                                            <Td><DifficultyComponent difficulty={track.Difficulty}></DifficultyComponent></Td>
+                                            <Td>{track.Laps}</Td>
+                                            <Td>{track.BItemMode ? "✓" : ""}</Td>
+                                            <Td><Tooltip label={track?.seasonOfReleaseDate}>{track.ReleaseDate}</Tooltip></Td>
+                                            <Td>{track.Record ? <Tooltip label={`by ${track.Player} on ${track.TopRecordDate}`}>
+                                                <ChakraLink onClick={() => {
+                                                    setTrackData(track);
+                                                    setRecordToView({
+                                                        Record: track.Record,
+                                                        Player: track.Player,
+                                                        Video: track.Video
+                                                    });
+
+                                                    onOpenVideoModal();
+                                                }}>{track.Record}</ChakraLink>
+                                            </Tooltip> : "--:--.---"}</Td>
+                                            <Td>
+                                                <NavLink to={`${track.Name}`}>
+                                                    <Button>View ({track.NumberOfRecords || 0})</Button>
+                                                </NavLink>
+                                            </Td></> :
+
+                                            // Records View
+                                            <>
+                                                <Td>{track.Record ? <>
+                                                    <ChakraLink onClick={() => {
+                                                        setTrackData(track);
+                                                        setRecordToView({
+                                                            Record: track.Record,
+                                                            Player: track.Player,
+                                                            Video: track.Video
+                                                        });
+
+                                                        onOpenVideoModal();
+                                                    }}>{track.Record}
+                                                    </ChakraLink>
+                                                </> : "--:--.---"}</Td>
+
+                                                <Td>{track.Player}</Td>
+                                                <Td>{track.TopRecordDate}</Td>
+                                            </>}
+
                                     {user ? <Td>
                                         <EditableRecord trackID={track.ID} PersonalRecord={track.PersonalRecord} handlePersonalRecord={handlePersonalRecord} />
                                     </Td> : <></>}
+
                                     <Td textAlign="-webkit-center">
                                         <Image
                                             src={track.InternalID ? `${import.meta.env.VITE_ASSETS_GITHUB_URL}/Track/MiniMap/SDF_Minimap_${track.InternalID}.png` : minimaps.find(minimap => minimap.includes(track.Name))}

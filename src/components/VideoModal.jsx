@@ -16,7 +16,6 @@ const VideoModal = (props) => {
 
     const formatLinkForEmbed = (url) => {
         if (url) {
-
             // YouTube URL
             // Taken from https://stackoverflow.com/a/43706989 and converted from Python to Javascript
             if (/(youtube\.com|youtu\.be)/.test(url)) {

@@ -21,6 +21,13 @@
 
 ## Changelog
 
+### [1.0.3] - March 22nd, 2023
+
+- Added filters to tracks
+  - Search by track name or theme (with 0.5 second delay)
+  - Show Speed Grand Prix Tracks Only (some item tracks fall under this category...)
+  - Show Records View (strips out extraneous track info and only shows the top saved record details)
+
 ### [1.0.2] - March 19th, 2023
 
 - Fixed application not working in Firefox
