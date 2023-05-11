@@ -4,12 +4,14 @@ export default function Changelog() {
     return (
         <>
             <Heading as='h3' size='lg' mt={4} mb={2}>Changelog</Heading>
+            <Divider mb={4}/>
+            
             <Text fontSize='lg'>[1.0.4] - May 11th, 2023</Text>
             <UnorderedList>
                 <ListItem>Added Season 2 Track Minimaps</ListItem>
             </UnorderedList>
 
-            <Divider mb={4}/>
+            <Divider my={4}/>
 
             <Text fontSize='lg'>[1.0.3] - March 22nd, 2023</Text>
             <UnorderedList>
